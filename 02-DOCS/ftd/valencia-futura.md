@@ -108,3 +108,9 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - 3 grupos de 3 cifras reales que rotan cada 5 s (ciudad, especies, barrios extremos), más arriba bajo el titular.
 - Secciones bajo el pliegue: "Cómo funciona" (3 pasos), gráfico interactivo de especies + texto + botón, frase de cierre y pie con fuentes y créditos.
 - Evidencia: AppTest portada (4 botones, 9 cifras) → login → app sin excepciones.
+
+## Votos a favor/en contra, mapa por propuesta, panel del autor y mejoras (2026-10-15 ~16:35)
+- `votes.value` (+1/-1, se puede cambiar el voto), `proposals.author_dni`, tabla `suggestions` (migración automática de bases antiguas).
+- Votación: botones A favor / En contra, barra dividida verde/naranja, "Ver en el mapa" (bancos/árboles propuestos + manzanas que seguirían sin banco), desplegable de mejoras con formulario (solo vecinos del barrio).
+- "Tus propuestas": a favor, en contra, % apoyo, puesto y mejoras recibidas.
+- Evidencia (AppTest, 4 sesiones): Ana publica → Luis vota a favor, abre el mapa y sugiere → Marta vota en contra → Ana ve 1/1, 50 %, puesto 1 de 1, 1 mejora.

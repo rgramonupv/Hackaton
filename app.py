@@ -1,6 +1,7 @@
 """València Futura — propose neighbourhood reforms with measured impact, then vote."""
 
 import html
+import json
 
 import folium
 import streamlit as st
@@ -106,6 +107,14 @@ st.markdown(
     .rank-meta {{color: {COLORS['whale70']}; font-variant-numeric: tabular-nums;}}
     .bar {{height: 8px; background: #DCE8D5; margin: .45rem 0;}}
     .bar > div {{height: 100%; background: {COLORS['biodiversity']};}}
+    .bar.split {{display: flex; gap: 2px; background: transparent;}}
+    .bar.split > div {{border-radius: 2px;}}
+    .bar.split > div.against {{background: {COLORS['climate']};}}
+    .bar.split > div.none {{background: #DCE8D5; flex: 1;}}
+    .mine {{display: inline-block; background: {COLORS['whale']}; color: #FFFFFF; font-size: .85rem;
+            padding: .1rem .6rem; margin-left: .6rem; vertical-align: middle;}}
+    .suggestion {{border-left: 3px solid {COLORS['biodiversity']}; padding: .2rem 0 .2rem .8rem; margin: .4rem 0;}}
+    .suggestion small {{color: {COLORS['whale70']};}}
     .best {{display: inline-block; background: {COLORS['climate']}; color: {COLORS['whale']}; font-size: .85rem;
             padding: .1rem .6rem; margin-left: .6rem; vertical-align: middle; letter-spacing: .03em;}}
 
@@ -425,6 +434,7 @@ with tab_sim:
                     barrio_name, title or "Propuesta sin nombre", user["name"], state.new_benches,
                     state.new_trees, cost, before, after,
                     {"radius": radius, "mean_residents": mean_residents, "pct_elderly": pct_elderly},
+                    author_dni=user["dni"],
                 )
                 state.update(new_benches=[], new_trees=[], flash="Propuesta publicada. Ya se puede votar.")
                 st.rerun()
@@ -475,40 +485,118 @@ with tab_sim:
             st.rerun()
 
 # --- Voting ---------------------------------------------------------------------------
+def proposal_map(p: dict) -> folium.Map:
+    """The barrio with one proposal drawn on it: its new benches/trees and the blocks it leaves uncovered."""
+    benches, trees = [tuple(b) for b in json.loads(p["benches"])], [tuple(t) for t in json.loads(p["trees"])]
+    pm = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap")
+    folium.GeoJson(d["barrio"], style_function=lambda _: {
+        "color": COLORS["whale"], "fill": False, "weight": 3, "dashArray": "6 4"}).add_to(pm)
+    ok_mask = model.covered_mask(blocks, d["bancos"] + benches, radius, lat0)
+    for f, ok in zip(d["manzanas"], ok_mask):
+        folium.GeoJson(f, style_function=lambda _, ok=ok: {
+            "color": "#FFFFFF", "weight": 0.8, "fillColor": COLORS["covered"] if ok else COLORS["climate"],
+            "fillOpacity": 0.35 if ok else 0.55}).add_to(pm)
+    for lat, lon in d["bancos"]:
+        folium.CircleMarker([lat, lon], radius=3, color=COLORS["bench"], fill=True, fill_opacity=1, weight=0).add_to(pm)
+    for lat, lon in benches:
+        folium.Marker([lat, lon], icon=folium.Icon(color="lightgreen", icon="plus"), tooltip="Banco propuesto").add_to(pm)
+    for lat, lon in trees:
+        folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol propuesto").add_to(pm)
+    return pm
+
+
+VOTE_MESSAGES = {
+    "ok": "Voto registrado.",
+    "changed": "Has cambiado tu voto.",
+    "duplicate": "Ya habías votado eso en esta propuesta.",
+    "wrong_barrio": "Solo pueden votar los vecinos empadronados en este barrio.",
+}
+
 with tab_vote:
     proposals = db.ranking(barrio_name)
+    mine = [p for p in proposals if p.get("author_dni") == user["dni"]]
+    if mine:
+        st.markdown('<h2 class="display section-title">Tus propuestas</h2>', unsafe_allow_html=True)
+        for p in mine:
+            total = p["votes_for"] + p["votes_against"]
+            position = next(i for i, q in enumerate(proposals, 1) if q["id"] == p["id"])
+            with st.container(border=True):
+                st.markdown(f"**{html.escape(p['title'])}**")
+                c1, c2, c3, c4, c5 = st.columns(5)
+                c1.metric("A favor", p["votes_for"])
+                c2.metric("En contra", p["votes_against"])
+                c3.metric("Apoyo", f"{100 * p['votes_for'] / total:.0f} %" if total else "—")
+                c4.metric("Puesto", f"{position} de {len(proposals)}")
+                c5.metric("Mejoras sugeridas", p["n_suggestions"])
+                for sug in db.suggestions(p["id"]):
+                    st.markdown(f'<div class="suggestion">{html.escape(sug["text"])}<br>'
+                                f'<small>{html.escape(sug["name"])}, {sug["created"][:16]}</small></div>',
+                                unsafe_allow_html=True)
+        st.divider()
+
+    st.markdown('<h2 class="display section-title">Propuestas del barrio</h2>', unsafe_allow_html=True)
     if not proposals:
         st.info("Todavía no hay propuestas en este barrio. Diseña la primera en «Diseña tu propuesta».")
     else:
         if own_barrio:
-            st.caption(f"Votas como {user['name']}. Cada vecino puede votar una vez cada propuesta. "
+            st.caption(f"Votas como {user['name']}: un voto por propuesta, a favor o en contra (puedes cambiarlo). "
                        "Las cifras de población son estimadas.")
         else:
             st.info(f"Solo los vecinos empadronados en {barrio_name.title()} pueden votar aquí.")
         efficiency = {p["id"]: p["cost"] / g for p in proposals if (g := p["elderly_after"] - p["elderly_before"]) > 0}
         best_id = min(efficiency, key=efficiency.get) if efficiency else None
-        max_votes = max(p["votes"] for p in proposals) or 1
+        max_total = max(p["votes_for"] + p["votes_against"] for p in proposals) or 1
         for i, p in enumerate(proposals, 1):
             gain = p["elderly_after"] - p["elderly_before"]
             per_person = f"{fmt(efficiency[p['id']])} € por persona" if p["id"] in efficiency else "sin mayores nuevos cubiertos"
             badge = '<span class="best">La más eficiente</span>' if p["id"] == best_id else ""
-            row, action = st.columns([5, 1], vertical_alignment="center")
+            badge += '<span class="mine">Tu propuesta</span>' if p.get("author_dni") == user["dni"] else ""
+            w_for, w_against = 100 * p["votes_for"] / max_total, 100 * p["votes_against"] / max_total
+            row, action = st.columns([4, 2], vertical_alignment="center")
             row.markdown(
                 f"""<div class="rank"><div class="rank-pos">{i}</div><div>
                 <div class="rank-title">{html.escape(p['title'])}{badge}</div>
-                <div class="bar" role="img" aria-label="{p['votes']} de {max_votes} votos">
-                <div style="width:{100 * p['votes'] / max_votes:.0f}%"></div></div>
-                <div class="rank-meta">{p['votes']} votos. Propuesta de {html.escape(p['author'])}: {fmt(p['cost'])} €,
-                {gain:+.0f} mayores con banco cerca, {per_person}.</div></div></div>""",
+                <div class="bar split" role="img" aria-label="{p['votes_for']} a favor, {p['votes_against']} en contra">
+                <div style="width:{w_for:.0f}%"></div><div class="against" style="width:{w_against:.0f}%"></div>
+                <div class="none"></div></div>
+                <div class="rank-meta">{p['votes_for']} a favor y {p['votes_against']} en contra. Propuesta de
+                {html.escape(p['author'])}: {fmt(p['cost'])} €, {gain:+.0f} mayores con banco cerca, {per_person}.</div>
+                </div></div>""",
                 unsafe_allow_html=True,
             )
-            if action.button("Votar", key=f"vote_{p['id']}", disabled=not own_barrio, use_container_width=True):
-                state.flash = {
-                    "ok": "Voto registrado.",
-                    "duplicate": "Ya habías votado esta propuesta.",
-                    "wrong_barrio": "Solo pueden votar los vecinos empadronados en este barrio.",
-                }[db.vote(p["id"], user["dni"])]
+            current = db.my_vote(p["id"], user["dni"])
+            b_for, b_against = action.columns(2)
+            for col, value, label in [(b_for, 1, "A favor"), (b_against, -1, "En contra")]:
+                if col.button(label, key=f"vote_{p['id']}_{value}", disabled=not own_barrio, use_container_width=True,
+                              type="primary" if current == value else "secondary"):
+                    state.flash = VOTE_MESSAGES[db.vote(p["id"], user["dni"], value)]
+                    st.rerun()
+            showing = state.get("view_pid") == p["id"]
+            if action.button("Ocultar mapa" if showing else "Ver en el mapa", key=f"map_{p['id']}",
+                             use_container_width=True):
+                state.view_pid = None if showing else p["id"]
                 st.rerun()
+            if showing:
+                st_folium(proposal_map(p), key=f"pmap_{p['id']}", height=420, use_container_width=True,
+                          returned_objects=[])
+                st.caption("🟢 bancos y árboles propuestos · 🟧 manzanas que seguirían sin banco a ≤ "
+                           f"{radius} m con esta propuesta")
+            with st.expander(f"Mejoras sugeridas ({p['n_suggestions']})"):
+                for sug in db.suggestions(p["id"]):
+                    st.markdown(f'<div class="suggestion">{html.escape(sug["text"])}<br>'
+                                f'<small>{html.escape(sug["name"])}, {sug["created"][:16]}</small></div>',
+                                unsafe_allow_html=True)
+                if own_barrio:
+                    with st.form(f"suggest_{p['id']}", clear_on_submit=True, border=False):
+                        text = st.text_area("Propón una mejora para esta propuesta",
+                                            placeholder="Por ejemplo: que los bancos tengan respaldo y sombra…",
+                                            max_chars=500)
+                        if st.form_submit_button("Enviar mejora"):
+                            result = db.add_suggestion(p["id"], user["dni"], user["name"], text)
+                            state.flash = {"ok": "Mejora enviada al autor de la propuesta.",
+                                           "empty": "Escribe la mejora antes de enviarla.",
+                                           "wrong_barrio": "Solo pueden sugerir mejoras los vecinos del barrio."}[result]
+                            st.rerun()
             st.divider()
 
 # --- València verde: city-wide green data -------------------------------------------
