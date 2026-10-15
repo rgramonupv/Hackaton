@@ -383,7 +383,7 @@ with st.sidebar:
         cost_tree = st.number_input("Coste por árbol (€)", 100, 5000, 400, 50)
     st.subheader("Población estimada")
     st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
-    mean_residents = st.slider("Habitantes medios por manzana", 20, 500, 150, 10)
+    mean_residents = 150  # fixed estimate of residents in an average-size block
     pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
     pct_children = st.slider("Menores de 15 años (%)", 5, 30, 13)
     st.subheader("Zonas verdes")
