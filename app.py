@@ -61,10 +61,11 @@ st.markdown(
     }}
     .hero-inner {{position: relative; z-index: 1;}}
     .claims {{display: grid;}}
-    .claims span {{grid-area: 1 / 1; animation: claim 16s ease-in-out infinite;}}
-    .claims span:nth-child(2) {{animation-delay: -8s;}}
-    @keyframes claim {{0%, 44% {{opacity: 1; transform: none;}} 50%, 94% {{opacity: 0; transform: translateY(.4rem);}}
-                      100% {{opacity: 1; transform: none;}}}}
+    /* Two headlines, 7 s each: a 14 s cycle; the second starts 7 s later and stays hidden until then. */
+    .claims span {{grid-area: 1 / 1; opacity: 0; animation: claim 14s ease-in-out infinite both;}}
+    .claims span:nth-child(2) {{animation-delay: 7s;}}
+    @keyframes claim {{0% {{opacity: 0; transform: translateY(.4rem);}} 4%, 46% {{opacity: 1; transform: none;}}
+                      50%, 100% {{opacity: 0; transform: translateY(.4rem);}}}}
     @media (prefers-reduced-motion: reduce) {{
         .claims {{display: block;}} .claims span {{display: block; animation: none;}}
         .claims span:nth-child(2) {{font-size: .55em; margin-top: .6rem;}}
