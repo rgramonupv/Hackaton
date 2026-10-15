@@ -147,6 +147,16 @@ def barrio_center(barrio: dict) -> tuple[float, float]:
     return sum(p[1] for p in ring) / len(ring), sum(p[0] for p in ring) / len(ring)
 
 
+NEW_BENCH = "#8B5A2B"  # wood brown for benches the resident adds
+
+
+def new_bench_icon() -> folium.DivIcon:
+    """Brown round marker with a white ring, bigger than the existing-bench dots."""
+    return folium.DivIcon(icon_size=(22, 22), icon_anchor=(11, 11), html=(
+        f'<div style="width:22px;height:22px;border-radius:50%;background:{NEW_BENCH};border:3px solid #FFFFFF;'
+        'box-shadow:0 1px 4px rgba(0,0,0,.45);color:#FFFFFF;font:700 14px/16px sans-serif;text-align:center">+</div>'))
+
+
 def shade(t: float, light: str = "#E8F3E1", dark: str = "#133A24") -> str:
     """Single-hue sequential ramp: 0 → light green, 1 → deep pine green."""
     a, b = (tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)) for c in (light, dark))
@@ -511,7 +521,7 @@ with tab_sim:
             folium.CircleMarker([lat, lon], radius=3.5, color=COLORS["bench"], fill=True, fill_opacity=1,
                                 weight=0).add_to(m)
         for lat, lon in state.new_benches:
-            folium.Marker([lat, lon], icon=folium.Icon(color="lightgreen", icon="plus"), tooltip="Banco nuevo").add_to(m)
+            folium.Marker([lat, lon], icon=new_bench_icon(), tooltip="Banco nuevo").add_to(m)
         for lat, lon in state.new_trees:
             folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol nuevo").add_to(m)
 
@@ -530,7 +540,8 @@ with tab_sim:
             <span><i aria-hidden="true" style="background:{COLORS['forest']}"></i>Árbol</span>
             <span><i aria-hidden="true" class="sq" style="background:{COLORS['biodiversity']}"></i>Parque o jardín</span>
             {legend_blocks}
-            <span><i aria-hidden="true" style="background:{COLORS['ocean']}"></i>Lo que tú añades</span></div>""",
+            <span><i aria-hidden="true" style="background:{NEW_BENCH}"></i>Banco que añades</span>
+            <span><i aria-hidden="true" style="background:#72B026"></i>Árbol que añades</span></div>""",
             unsafe_allow_html=True,
         )
         click = (out or {}).get("last_clicked")
@@ -554,7 +565,7 @@ def proposal_map(p: dict) -> folium.Map:
     for lat, lon in d["bancos"]:
         folium.CircleMarker([lat, lon], radius=3, color=COLORS["bench"], fill=True, fill_opacity=1, weight=0).add_to(pm)
     for lat, lon in benches:
-        folium.Marker([lat, lon], icon=folium.Icon(color="lightgreen", icon="plus"), tooltip="Banco propuesto").add_to(pm)
+        folium.Marker([lat, lon], icon=new_bench_icon(), tooltip="Banco propuesto").add_to(pm)
     for lat, lon in trees:
         folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol propuesto").add_to(pm)
     return pm
@@ -638,7 +649,7 @@ with tab_vote:
             if showing:
                 st_folium(proposal_map(p), key=f"pmap_{p['id']}", height=420, use_container_width=True,
                           returned_objects=[])
-                st.caption("🟢 bancos y árboles propuestos · 🟧 manzanas que seguirían sin banco a ≤ "
+                st.caption("🟤 bancos propuestos · 🟢 árboles propuestos · 🟧 manzanas que seguirían sin banco a ≤ "
                            f"{radius} m con esta propuesta")
             with st.expander(f"Mejoras sugeridas ({p['n_suggestions']})"):
                 for sug in db.suggestions(p["id"]):
