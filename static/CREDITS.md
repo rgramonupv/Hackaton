@@ -1,0 +1,1 @@
+- `hero.jpg`: "Outdoor-Gym-Jardín-del-Turia-Park-Valencia" by Acediscovery, CC BY 4.0, via Wikimedia Commons — https://commons.wikimedia.org/wiki/File:Outdoor-Gym-Jard%C3%ADn-del-Turia-Park-Valencia.jpg (resized).

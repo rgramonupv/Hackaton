@@ -77,3 +77,10 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Sustituye el selector de vecino por acceso con DNI + clave (simulación de Cl@ve + padrón). Tabla `users` en SQLite con clave en PBKDF2-SHA256 + sal; 4 vecinos de prueba (3 de Russafa, 1 de Benicalap).
 - Reglas: solo se publica y se vota en el barrio de empadronamiento; un voto por DNI y propuesta; otros barrios se pueden explorar.
 - Evidencia (AppTest + db): clave errónea → error; DNI en minúsculas OK; Ana vota → 1; Pepe en Russafa → `wrong_barrio`; Ana repite → `duplicate`; en Benicalap "Publicar" desactivado.
+
+## Rediseño estilo conservation.org (2026-10-15 ~16:05)
+- Fix login: el servidor tenía cargado el `db.py` antiguo (`module 'db' has no attribute 'authenticate'`) → reiniciar Streamlit tras cambiar módulos.
+- Tokens extraídos del CSS de conservation.org: ozone #FAF7F2, whale #152D44, biodiversity #4BAA47, forest #257422, climate #FC992F, ocean #1096D4. Tipos: Proxima Nova ExCn/Proxima Nova → sustitutos libres Barlow Condensed (titulares en mayúsculas) + Montserrat.
+- Hero a sangre con foto del Jardí del Túria (CC BY 4.0, crédito en `static/CREDITS.md` y en pantalla) y la cifra en directo; login a pantalla partida.
+- Revisión web-design-guidelines: corregido `role="img"` que ocultaba el h1; añadidos autocomplete, focus-visible, tabular-nums, text-wrap balance, placeholders con "…". Sin corregir: "Quitar lo añadido" sin deshacer; Title Case no aplica en castellano.
+- Evidencia: AppTest login → app → voto = 1 sin excepciones; `/app/static/hero.jpg` = 200.

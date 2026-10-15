@@ -1,31 +1,38 @@
-# Huerta valenciana: huerta green, orange-tree orange, acequia blue, earth ochre, whitewash.
+# Style inspired by conservation.org: ozone paper, whale navy, forest/biodiversity greens,
+# condensed uppercase display type (Barlow Condensed ~ Proxima Nova ExCn) + Montserrat (~ Proxima Nova).
+[server]
+enableStaticServing = true
+
+[client]
+toolbarMode = "minimal"
+
 [theme]
 base = "light"
-primaryColor = "#2F5D3A"
-backgroundColor = "#F6F7F2"
-secondaryBackgroundColor = "#E8EDE1"
-textColor = "#1F2A23"
-greenColor = "#2F5D3A"
-orangeColor = "#E07B24"
-blueColor = "#2C6A86"
-linkColor = "#2C6A86"
-borderColor = "#D3DCCB"
+primaryColor = "#257422"
+backgroundColor = "#FAF7F2"
+secondaryBackgroundColor = "#EEECE9"
+textColor = "#152D44"
+greenColor = "#257422"
+orangeColor = "#FC992F"
+blueColor = "#0171A8"
+linkColor = "#0171A8"
+borderColor = "#DDD8CF"
 showWidgetBorder = true
-baseRadius = "6px"
-buttonRadius = "6px"
-baseFontSize = 17
-font = "'Public Sans':https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&display=swap, sans-serif"
-headingFont = "Spectral:https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&display=swap, serif"
-headingFontWeights = [600, 600, 600, 500, 500, 500]
-metricValueFontSize = "2.1rem"
-metricValueFontWeight = 600
+baseRadius = "4px"
+buttonRadius = "4px"
+baseFontSize = 16
+font = "Montserrat:https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap, sans-serif"
+headingFont = "'Barlow Condensed':https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&display=swap, sans-serif"
+headingFontWeights = [800, 700, 700, 600, 600, 600]
+metricValueFontSize = "2.4rem"
+metricValueFontWeight = 700
 
 [theme.sidebar]
-backgroundColor = "#2F5D3A"
-secondaryBackgroundColor = "#3C6E47"
-textColor = "#F3F6EE"
-primaryColor = "#F2B66B"
-borderColor = "#4D7F57"
+backgroundColor = "#152D44"
+secondaryBackgroundColor = "#1F3B57"
+textColor = "#FAF7F2"
+primaryColor = "#4BAA47"
+borderColor = "#2C4A66"
 
 [browser]
 gatherUsageStats = false
