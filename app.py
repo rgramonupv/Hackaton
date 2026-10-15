@@ -386,10 +386,8 @@ with st.sidebar:
     mean_residents = 150  # fixed estimate of residents in an average-size block
     pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
     pct_children = st.slider("Menores de 15 años (%)", 5, 30, 13)
-    st.subheader("Zonas verdes")
-    st.caption("Criterio de la OMS: una zona verde de al menos 0,5 ha a 300 m de casa.")
-    green_radius = st.slider("Distancia máxima a una zona verde (m)", 100, 1000, 300, 50)
-    green_min_area = st.slider("Tamaño mínimo de zona verde (m²)", 0, 20000, 5000, 500)
+    # WHO criterion for the children headline: a green space of at least 0.5 ha within 300 m of home.
+    green_radius, green_min_area = 300, 5000
 
 d = load_barrio(barrio_name)
 lat0, lon0 = barrio_center(d["barrio"])
