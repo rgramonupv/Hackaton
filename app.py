@@ -13,7 +13,7 @@ import green
 import model
 import ornaments
 
-st.set_page_config(page_title="València Futura", page_icon="🌿", layout="wide")
+st.set_page_config(page_title="València Futura", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
 
 # Palette inspired by conservation.org, shifted to green: ozone paper, deep pine green, biodiversity/forest
 # greens, climate orange (alert) and lime (what the resident adds).
@@ -376,8 +376,11 @@ with st.sidebar:
     st.subheader("Variables de decisión")
     radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25,
                        help="Consideramos que una persona tiene un banco cerca si vive a menos de esta distancia.")
-    cost_bench = st.number_input("Coste por banco (€)", 100, 5000, 800, 50)
-    cost_tree = st.number_input("Coste por árbol (€)", 100, 5000, 400, 50)
+    if guest:  # visitors see the data, not the budget
+        cost_bench, cost_tree = 800, 400
+    else:
+        cost_bench = st.number_input("Coste por banco (€)", 100, 5000, 800, 50)
+        cost_tree = st.number_input("Coste por árbol (€)", 100, 5000, 400, 50)
     st.subheader("Población estimada")
     st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
     mean_residents = st.slider("Habitantes medios por manzana", 20, 500, 150, 10)
@@ -436,8 +439,9 @@ with tab_sim:
         st.markdown('<h2 class="display section-title">Tu propuesta</h2>', unsafe_allow_html=True)
         mode = st.radio("Al hacer clic en el mapa, añade", ["Un banco", "Un árbol"], horizontal=True)
         st.metric(f"Mayores con banco a ≤ {radius} m", fmt(after), f"{gained:+,.0f}".replace(",", "."))
-        st.metric("Coste", f"{fmt(cost)} €")
-        st.metric("Coste por persona mayor beneficiada", f"{fmt(cost / gained)} €" if gained > 0 else "—")
+        if not guest:
+            st.metric("Coste", f"{fmt(cost)} €")
+            st.metric("Coste por persona mayor beneficiada", f"{fmt(cost / gained)} €" if gained > 0 else "—")
         st.caption(f"{len(state.new_benches)} bancos y {len(state.new_trees)} árboles nuevos")
         if st.button("Quitar lo añadido", disabled=not (state.new_benches or state.new_trees)):
             state.update(new_benches=[], new_trees=[])
