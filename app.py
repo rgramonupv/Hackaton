@@ -30,6 +30,8 @@ COLORS = {
 }
 SLIDES = [f"app/static/slide{i}.jpg" for i in range(1, 6)]
 SLIDE_SECONDS = 6
+CLAIM_SECONDS = 12  # each hero headline stays on screen this long
+STAT_SECONDS = 9    # each group of landing figures stays on screen this long
 PHOTO_CREDIT = ("Fotos: Joanbanjo, Pacopac, isaacpanoramio y Acediscovery "
                 "(CC BY-SA / CC BY, Wikimedia Commons)")
 
@@ -64,8 +66,8 @@ st.markdown(
     .claims {{display: grid;}}
     /* Two headlines, 7 s each (14 s cycle). The first is visible from the very first frame; the swap takes
        ~0.3 s and both change at the same moment. The negative delay puts the second mid-cycle, so nothing waits. */
-    .claims span {{grid-area: 1 / 1; animation: claim 14s linear infinite;}}
-    .claims span:nth-child(2) {{animation-delay: -7s;}}
+    .claims span {{grid-area: 1 / 1; animation: claim {2 * CLAIM_SECONDS}s linear infinite;}}
+    .claims span:nth-child(2) {{animation-delay: -{CLAIM_SECONDS}s;}}
     @keyframes claim {{0%, 48% {{opacity: 1;}} 50%, 98% {{opacity: 0;}} 100% {{opacity: 1;}}}}
     @media (prefers-reduced-motion: reduce) {{
         .claims {{display: block;}} .claims span {{display: block; animation: none;}}
@@ -250,7 +252,7 @@ if not state.get("user") and not state.get("guest"):
              (fmt(top_green["m2_verde_por_ha"]), f"m² verdes por hectárea en {top_green['barrio'].title()}"),
              (fmt(city["m2_verde_por_ha"].median()), "m² verdes por hectárea en el barrio mediano")],
         ]
-        seconds = 5
+        seconds = STAT_SECONDS
         sets_html = "".join(
             f'<div class="stat-set" style="animation-delay:{-((len(stat_sets) - i) % len(stat_sets)) * seconds}s;'
             f'animation-duration:{seconds * len(stat_sets)}s">'
