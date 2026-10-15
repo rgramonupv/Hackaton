@@ -148,7 +148,7 @@ def barrio_center(barrio: dict) -> tuple[float, float]:
 
 
 NEW_BENCH = "#8B5A2B"  # wood brown for benches the resident adds
-TREE_NEAR, TREE_FAR = "#A8E08F", "#D8D3C4"  # light green: block with a tree nearby; neutral sand: without
+TREE_NEAR, TREE_FAR = "#8FD873", "#6B7A86"  # light green: block with a tree nearby; slate grey: without
 
 
 def new_bench_icon() -> folium.DivIcon:
@@ -393,8 +393,8 @@ with st.sidebar:
     st.subheader("Variables de decisión")
     radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25,
                        help="Consideramos que una persona tiene un banco cerca si vive a menos de esta distancia.")
-    tree_radius = st.slider("Distancia máxima a un árbol (m)", 10, 100, 30, 5,
-                            help="Una manzana tiene árbol cerca si hay alguno a menos de esta distancia.")
+    tree_radius = st.slider("Distancia máxima a un árbol (m)", 2, 50, 5, 1,
+                            help="Medida desde el borde de la manzana: con 5 m, el árbol está en su misma acera.")
     if guest:  # visitors see the data, not the budget
         cost_bench, cost_tree = 800, 400
     else:
@@ -462,8 +462,8 @@ with tab_sim:
         color_by = st.radio("Colorea las manzanas por", ["Banco cerca", "Árbol cerca", "Personas mayores", "Niños"],
                             horizontal=True)
         st.metric(f"Mayores con banco a ≤ {radius} m", fmt(after), f"{gained:+,.0f}".replace(",", "."))
-        trees_before = int(model.covered_mask(blocks, d["arboles"], tree_radius, lat0).sum())
-        tree_ok = model.covered_mask(blocks, d["arboles"] + state.new_trees, tree_radius, lat0)
+        trees_before = int(model.edge_covered_mask(d["manzanas"], d["arboles"], tree_radius, lat0).sum())
+        tree_ok = model.edge_covered_mask(d["manzanas"], d["arboles"] + state.new_trees, tree_radius, lat0)
         st.metric(f"Manzanas con árbol a ≤ {tree_radius} m", f"{int(tree_ok.sum())} de {len(blocks)}",
                   f"{int(tree_ok.sum()) - trees_before:+d}")
         if not guest:
@@ -510,7 +510,7 @@ with tab_sim:
             values, vmax = None, 1
         for f, ok, tok, e, k in zip(d["manzanas"], covered, tree_ok, elderly, children):
             if color_by == "Árbol cerca":
-                fill, opacity = (TREE_NEAR, 0.6) if tok else (TREE_FAR, 0.45)
+                fill, opacity = (TREE_NEAR, 0.6) if tok else (TREE_FAR, 0.5)
             elif values is None:
                 fill, opacity = (COLORS["covered"], 0.4) if ok else (COLORS["climate"], 0.6)
             else:

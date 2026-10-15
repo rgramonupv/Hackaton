@@ -77,3 +77,28 @@ def point_in_polygon(lat: float, lon: float, geometry: dict) -> bool:
         if inside:
             return True
     return False
+
+
+def edge_covered_mask(features: list[dict], points: list[tuple[float, float]], radius_m: float, lat0: float,
+                      chunk: int = 1000) -> np.ndarray:
+    """True for each block whose outline (any vertex) is within radius_m of any point.
+
+    Street trees sit on the pavement at the block edge, so the edge, not the centroid, is the right reference."""
+    if not features or not points:
+        return np.zeros(len(features), dtype=bool)
+    owner, vlat, vlon = [], [], []
+    for i, f in enumerate(features):
+        g = f["geometry"]
+        ring = g["coordinates"][0] if g["type"] == "Polygon" else g["coordinates"][0][0]
+        for lon, lat in ring:
+            owner.append(i), vlat.append(lat), vlon.append(lon)
+    vx, vy = _to_metres(np.array(vlat), np.array(vlon), lat0)
+    pts = np.asarray(points)
+    px, py = _to_metres(pts[:, 0], pts[:, 1], lat0)
+    best = np.full(vx.shape, np.inf)
+    for s in range(0, len(px), chunk):  # chunked to keep the distance matrix small
+        d = np.hypot(vx[:, None] - px[None, s:s + chunk], vy[:, None] - py[None, s:s + chunk])
+        best = np.minimum(best, d.min(axis=1))
+    covered = np.zeros(len(features), dtype=bool)
+    np.logical_or.at(covered, np.array(owner), best <= radius_m)
+    return covered

@@ -129,3 +129,7 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 ## % de mayores y niños estimados por barrio (2026-10-15 ~17:20)
 - Sin edades publicadas por barrio: se escalan las medias de la ciudad (22 % / 13 %) con el índice de vulnerabilidad demográfica 2021 (más bajo = población más envejecida), limitado a 12–32 % y 8–18 %. 18 pedanías sin índice → media de la ciudad. Se quitan los sliders.
 - Evidencia: Russafa 27 %/10 % → 1.677 mayores sin banco; La Petxina 31 %/9 %; Benifaraig (sin índice) 22 %/13 %.
+
+## Árboles: cobertura al borde de la manzana (2026-10-15 ~17:45)
+- Bug visto en captura: el color "sin árbol" (arena) se confundía con el beige de OSM y la distancia se medía al centro de la manzana (los árboles están en la acera). Ahora se mide a los vértices del contorno (`model.edge_covered_mask`), "sin árbol" en gris pizarra #6B7A86, radio por defecto 5 m (2–50).
+- Evidencia: Russafa 74/81 con árbol a 5 m; árbol nuevo junto a una manzana gris → 75/81 (+1) y el HTML del mapa pasa de 7 a 6 manzanas grises.
