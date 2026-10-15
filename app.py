@@ -164,6 +164,13 @@ def shade(t: float, light: str = "#E8F3E1", dark: str = "#133A24") -> str:
     return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
 
 
+def pretty(name: str) -> str:
+    """'CAMI DE VERA' -> 'Cami de Vera': title case with lowercase particles (not at the start)."""
+    small = {"de", "del", "la", "les", "els", "el", "i", "y", "d'", "l'"}
+    words = name.title().split()
+    return " ".join(w if i == 0 or w.lower() not in small else w.lower() for i, w in enumerate(words))
+
+
 def fmt(n: float) -> str:
     """Spanish thousands separator."""
     return f"{n:,.0f}".replace(",", ".")
@@ -393,12 +400,14 @@ with st.sidebar:
         if st.button("Iniciar sesión", type="primary"):
             require_login()
     else:
-        st.markdown(f"**{html.escape(user['name'])}**, empadronado/a en {user['barrio'].title()}")
+        st.markdown(f"**{html.escape(user['name'])}**, empadronado/a en {pretty(user['barrio'])}")
         if st.button("Cerrar sesión"):
             state.clear()
             st.rerun()
-    default_barrio = state.get("barrio") or (user["barrio"] if user else "RUSSAFA")
-    barrio_name = st.selectbox("Barrio que estás viendo", barrio_names, index=barrio_names.index(default_barrio))
+    # A keyed selectbox keeps the choice stable across reruns (a changing `index` would reset the widget).
+    if state.get("barrio_select") not in barrio_names:
+        state.barrio_select = state.get("barrio") or (user["barrio"] if user else "RUSSAFA")
+    barrio_name = st.selectbox("Barrio que estás viendo", barrio_names, key="barrio_select")
     own_barrio = bool(user) and barrio_name == user["barrio"]
     st.subheader("Variables de decisión")
     radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25,
@@ -415,7 +424,7 @@ with st.sidebar:
     mean_residents = 150  # fixed estimate of residents in an average-size block
     pct_elderly, pct_children, from_index = data.age_estimates().get(
         data.normalize_barrio(barrio_name), (data.CITY_PCT_ELDERLY, data.CITY_PCT_CHILDREN, False))
-    st.markdown(f"En **{barrio_name.title()}**, de cada 100 vecinos unos **{pct_elderly:.0f}** tienen más de 65 años "
+    st.markdown(f"En **{pretty(barrio_name)}**, de cada 100 vecinos unos **{pct_elderly:.0f}** tienen más de 65 años "
                 f"y unos **{pct_children:.0f}** son niños (menos de 15).")
     st.caption("Estimación a partir del índice de vulnerabilidad demográfica por barrio del Ayuntamiento (2021)."
                if from_index else "Este barrio no tiene índice publicado: usamos la media de la ciudad.")
@@ -446,8 +455,8 @@ st.markdown(
     f"""<section class="hero">{carousel()}
     <div class="hero-inner">
     <h1 class="display claims">
-    <span>{fmt(uncovered)} personas mayores de {barrio_name.title()} no tienen un banco a menos de {radius}&nbsp;m</span>
-    <span>{fmt(children_without_green)} niños de {barrio_name.title()} no tienen una zona verde a menos de {green_radius}&nbsp;m de casa</span>
+    <span>{fmt(uncovered)} personas mayores de {pretty(barrio_name)} no tienen un banco a menos de {radius}&nbsp;m</span>
+    <span>{fmt(children_without_green)} niños de {pretty(barrio_name)} no tienen una zona verde a menos de {green_radius}&nbsp;m de casa</span>
     </h1>
     <p>Coloca bancos y árboles en el mapa, mide a cuántos vecinos llegas y publícalo para que el barrio vote.</p>
     </div><span class="credit">{PHOTO_CREDIT}</span></section>
@@ -484,9 +493,9 @@ with tab_sim:
             state.update(new_benches=[], new_trees=[])
             st.rerun()
         if not own_barrio:
-            st.info(f"Puedes proponer cambios en {barrio_name.title()}, pero solo votan sus vecinos empadronados.")
+            st.info(f"Puedes proponer cambios en {pretty(barrio_name)}, pero solo votan sus vecinos empadronados.")
         with st.form("save", border=False):
-            title = st.text_input("Nombre de la propuesta", placeholder=f"Más bancos y sombra en {barrio_name.title()}…",
+            title = st.text_input("Nombre de la propuesta", placeholder=f"Más bancos y sombra en {pretty(barrio_name)}…",
                                   autocomplete="off")
             if st.form_submit_button("Inicia sesión para publicar" if guest else "Publicar propuesta",
                                      type="primary", use_container_width=True,
@@ -636,7 +645,7 @@ with tab_vote:
             st.caption(f"Votas como {user['name']}: un voto por propuesta, a favor o en contra (puedes cambiarlo). "
                        "Las cifras de población son estimadas.")
         else:
-            st.info(f"Solo los vecinos empadronados en {barrio_name.title()} pueden votar aquí.")
+            st.info(f"Solo los vecinos empadronados en {pretty(barrio_name)} pueden votar aquí.")
         efficiency = {p["id"]: p["cost"] / g for p in proposals if (g := p["elderly_after"] - p["elderly_before"]) > 0}
         best_id = min(efficiency, key=efficiency.get) if efficiency else None
         max_total = max(p["votes_for"] + p["votes_against"] for p in proposals) or 1
