@@ -148,6 +148,7 @@ def barrio_center(barrio: dict) -> tuple[float, float]:
 
 
 NEW_BENCH = "#8B5A2B"  # wood brown for benches the resident adds
+TREE_NEAR, TREE_FAR = "#A8E08F", "#D8D3C4"  # light green: block with a tree nearby; neutral sand: without
 
 
 def new_bench_icon() -> folium.DivIcon:
@@ -392,6 +393,8 @@ with st.sidebar:
     st.subheader("Variables de decisión")
     radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25,
                        help="Consideramos que una persona tiene un banco cerca si vive a menos de esta distancia.")
+    tree_radius = st.slider("Distancia máxima a un árbol (m)", 10, 100, 30, 5,
+                            help="Una manzana tiene árbol cerca si hay alguno a menos de esta distancia.")
     if guest:  # visitors see the data, not the budget
         cost_bench, cost_tree = 800, 400
     else:
@@ -456,8 +459,13 @@ with tab_sim:
     with right:
         st.markdown('<h2 class="display section-title">Tu propuesta</h2>', unsafe_allow_html=True)
         mode = st.radio("Al hacer clic en el mapa, añade", ["Un banco", "Un árbol"], horizontal=True)
-        color_by = st.radio("Colorea las manzanas por", ["Banco cerca", "Personas mayores", "Niños"], horizontal=True)
+        color_by = st.radio("Colorea las manzanas por", ["Banco cerca", "Árbol cerca", "Personas mayores", "Niños"],
+                            horizontal=True)
         st.metric(f"Mayores con banco a ≤ {radius} m", fmt(after), f"{gained:+,.0f}".replace(",", "."))
+        trees_before = int(model.covered_mask(blocks, d["arboles"], tree_radius, lat0).sum())
+        tree_ok = model.covered_mask(blocks, d["arboles"] + state.new_trees, tree_radius, lat0)
+        st.metric(f"Manzanas con árbol a ≤ {tree_radius} m", f"{int(tree_ok.sum())} de {len(blocks)}",
+                  f"{int(tree_ok.sum()) - trees_before:+d}")
         if not guest:
             st.metric("Coste", f"{fmt(cost)} €")
             st.metric("Coste por persona mayor beneficiada", f"{fmt(cost / gained)} €" if gained > 0 else "—")
@@ -500,8 +508,10 @@ with tab_sim:
             values, vmax = children, model.estimate_population(blocks, mean_residents, 18).max()
         else:
             values, vmax = None, 1
-        for f, ok, e, k in zip(d["manzanas"], covered, elderly, children):
-            if values is None:
+        for f, ok, tok, e, k in zip(d["manzanas"], covered, tree_ok, elderly, children):
+            if color_by == "Árbol cerca":
+                fill, opacity = (TREE_NEAR, 0.6) if tok else (TREE_FAR, 0.45)
+            elif values is None:
                 fill, opacity = (COLORS["covered"], 0.4) if ok else (COLORS["climate"], 0.6)
             else:
                 t = min(float((e if color_by == "Personas mayores" else k) / vmax), 1.0) if vmax else 0.0
@@ -509,7 +519,8 @@ with tab_sim:
             folium.GeoJson(f, style_function=lambda _, fill=fill, opacity=opacity: {
                 "color": "#FFFFFF", "weight": 0.8, "fillColor": fill, "fillOpacity": opacity},
                 tooltip=f"{e:.0f} mayores y {k:.0f} niños (estimado), "
-                        f"{'con banco cerca' if ok else 'sin banco cerca'}").add_to(m)
+                        f"{'con banco cerca' if ok else 'sin banco cerca'}, "
+                        f"{'con árbol cerca' if tok else 'sin árbol cerca'}").add_to(m)
         # One GeoJSON layer for thousands of trees keeps the page light (vs. one marker object per tree).
         folium.GeoJson(
             {"type": "FeatureCollection", "features": [
@@ -525,7 +536,12 @@ with tab_sim:
         for lat, lon in state.new_trees:
             folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol nuevo").add_to(m)
 
-        if color_by == "Banco cerca":
+        if color_by == "Árbol cerca":
+            legend_blocks = (f'<span><i aria-hidden="true" class="sq" style="background:{TREE_NEAR}"></i>'
+                             f'Manzana con árbol a ≤ {tree_radius}&nbsp;m</span>'
+                             f'<span><i aria-hidden="true" class="sq" style="background:{TREE_FAR}"></i>'
+                             'Manzana sin árbol cerca</span>')
+        elif color_by == "Banco cerca":
             legend_blocks = (f'<span><i aria-hidden="true" class="sq" style="background:{COLORS["climate"]}"></i>'
                              f'Manzana sin banco a ≤ {radius}&nbsp;m</span>')
         else:
