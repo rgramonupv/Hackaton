@@ -118,13 +118,11 @@ def my_vote(proposal_id: int, dni: str) -> int | None:
 
 
 def add_suggestion(proposal_id: int, dni: str, name: str, text: str) -> str:
-    """Store an improvement suggestion from a resident of the proposal's barrio."""
+    """Store an improvement suggestion (any registered resident, from any barrio)."""
     text = text.strip()
     if not text:
         return "empty"
     with _conn() as conn:
-        if not _same_barrio(conn, proposal_id, dni):
-            return "wrong_barrio"
         conn.execute("INSERT INTO suggestions (proposal_id, dni, name, text, created) VALUES (?, ?, ?, ?, ?)",
                      (proposal_id, dni, name, text, datetime.now().strftime("%Y-%m-%d %H:%M")))
     return "ok"

@@ -114,3 +114,8 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Votación: botones A favor / En contra, barra dividida verde/naranja, "Ver en el mapa" (bancos/árboles propuestos + manzanas que seguirían sin banco), desplegable de mejoras con formulario (solo vecinos del barrio).
 - "Tus propuestas": a favor, en contra, % apoyo, puesto y mejoras recibidas.
 - Evidencia (AppTest, 4 sesiones): Ana publica → Luis vota a favor, abre el mapa y sugiere → Marta vota en contra → Ana ve 1/1, 50 %, puesto 1 de 1, 1 mejora.
+
+## Crossfade del titular y propuestas desde otros barrios (2026-10-15 ~16:38)
+- Titular: la salida de una frase y la entrada de la otra se solapan (sin hueco vacío), 7 s cada una.
+- Cualquier vecino registrado puede publicar propuestas y sugerir mejoras en cualquier barrio; solo votan los empadronados.
+- Evidencia: Pepe (Benicalap) publica en Russafa y sugiere una mejora; botones de voto desactivados y `db.vote` → wrong_barrio.

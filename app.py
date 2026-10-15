@@ -62,11 +62,11 @@ st.markdown(
     }}
     .hero-inner {{position: relative; z-index: 1;}}
     .claims {{display: grid;}}
-    /* Two headlines, 7 s each: a 14 s cycle; the second starts 7 s later and stays hidden until then. */
+    /* Two headlines, 7 s each (14 s cycle). One fades out while the other fades in, with no empty gap. */
     .claims span {{grid-area: 1 / 1; opacity: 0; animation: claim 14s ease-in-out infinite both;}}
     .claims span:nth-child(2) {{animation-delay: 7s;}}
-    @keyframes claim {{0% {{opacity: 0; transform: translateY(.4rem);}} 4%, 46% {{opacity: 1; transform: none;}}
-                      50%, 100% {{opacity: 0; transform: translateY(.4rem);}}}}
+    @keyframes claim {{0% {{opacity: 0; transform: translateY(.4rem);}} 4%, 50% {{opacity: 1; transform: none;}}
+                      54%, 100% {{opacity: 0; transform: translateY(-.4rem);}}}}
     @media (prefers-reduced-motion: reduce) {{
         .claims {{display: block;}} .claims span {{display: block; animation: none;}}
         .claims span:nth-child(2) {{font-size: .55em; margin-top: .6rem;}}
@@ -424,12 +424,12 @@ with tab_sim:
             state.update(new_benches=[], new_trees=[])
             st.rerun()
         if not own_barrio:
-            st.info(f"Puedes explorar {barrio_name.title()}, pero solo publicas propuestas en {user['barrio'].title()}.")
+            st.info(f"Puedes proponer cambios en {barrio_name.title()}, pero solo votan sus vecinos empadronados.")
         with st.form("save", border=False):
             title = st.text_input("Nombre de la propuesta", placeholder="Bancos junto al mercado de Russafa…",
                                   autocomplete="off")
             if st.form_submit_button("Publicar propuesta", type="primary", use_container_width=True,
-                                     disabled=not own_barrio or not (state.new_benches or state.new_trees)):
+                                     disabled=not (state.new_benches or state.new_trees)):
                 db.save_proposal(
                     barrio_name, title or "Propuesta sin nombre", user["name"], state.new_benches,
                     state.new_trees, cost, before, after,
@@ -586,17 +586,16 @@ with tab_vote:
                     st.markdown(f'<div class="suggestion">{html.escape(sug["text"])}<br>'
                                 f'<small>{html.escape(sug["name"])}, {sug["created"][:16]}</small></div>',
                                 unsafe_allow_html=True)
-                if own_barrio:
-                    with st.form(f"suggest_{p['id']}", clear_on_submit=True, border=False):
-                        text = st.text_area("Propón una mejora para esta propuesta",
-                                            placeholder="Por ejemplo: que los bancos tengan respaldo y sombra…",
-                                            max_chars=500)
-                        if st.form_submit_button("Enviar mejora"):
-                            result = db.add_suggestion(p["id"], user["dni"], user["name"], text)
-                            state.flash = {"ok": "Mejora enviada al autor de la propuesta.",
-                                           "empty": "Escribe la mejora antes de enviarla.",
-                                           "wrong_barrio": "Solo pueden sugerir mejoras los vecinos del barrio."}[result]
-                            st.rerun()
+                # Anyone can suggest improvements; only residents of the barrio vote.
+                with st.form(f"suggest_{p['id']}", clear_on_submit=True, border=False):
+                    text = st.text_area("Propón una mejora para esta propuesta",
+                                        placeholder="Por ejemplo: que los bancos tengan respaldo y sombra…",
+                                        max_chars=500)
+                    if st.form_submit_button("Enviar mejora"):
+                        result = db.add_suggestion(p["id"], user["dni"], user["name"], text)
+                        state.flash = {"ok": "Mejora enviada al autor de la propuesta.",
+                                       "empty": "Escribe la mejora antes de enviarla."}[result]
+                        st.rerun()
             st.divider()
 
 # --- València verde: city-wide green data -------------------------------------------
