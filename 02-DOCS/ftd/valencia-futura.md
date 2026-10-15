@@ -99,3 +99,7 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - **Bug de datos:** la paginación por offset del geoportal devolvía páginas cortas (522 de 1.000, `exceededTransferLimit`) y orden inestable (duplicados). Ahora se piden los `objectIds` y se descargan por lotes de 500. Russafa: 522 → **2.945 árboles** (el campo `barrio` da 2.952; diferencia por árboles en el borde). Caché regenerada.
 - Pestaña "València verde" (`green.py`): agregados en servidor (GROUP BY) de arbolado y bancos por barrio, especies; parques asignados a barrio por punto-en-polígono. Coroplético (m² verdes/ha o árboles/ha), ranking top 15 + barrio propio resaltado (paleta validada con dataviz: CVD ΔE 19,8; WARN de contraste → etiqueta directa + tabla), top 10 especies, tabla completa.
 - Evidencia: AppTest login → app → pestañas sin excepciones; Russafa puesto 14/88 en árboles, 1.097 m² verdes/ha (mediana 525).
+
+## Portada pública con llamadas a la acción (2026-10-15 ~16:27)
+- Antes del login: carrusel, titular, cifras reales de la ciudad y 3 botones ("Haz de tu barrio un lugar más verde", "Acerca un banco a tus mayores", "Vota las propuestas de tu barrio") que abren el login; "Volver al inicio" en la tarjeta.
+- Evidencia: AppTest portada → login → volver → login → app sin excepciones.

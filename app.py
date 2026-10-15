@@ -188,6 +188,49 @@ if not state.get("user"):
         f'vecinos.</p><span class="login-credit">{PHOTO_CREDIT}</span>',
         unsafe_allow_html=True,
     )
+    if not state.get("show_login"):
+        # Public landing: real city-wide green figures and calls to action that open the login.
+        city = green.city_table()
+        st.markdown(
+            f"""<style>
+            .landing-stats {{display: flex; justify-content: center; flex-wrap: wrap; gap: 3rem; margin: 0 0 2.4rem;
+                             color: #FFFFFF; text-align: center; text-shadow: 0 2px 12px rgba(0,0,0,.35);}}
+            .landing-stats b {{display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 3.2rem;
+                               font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;}}
+            [class*="st-key-cta_"] button {{border-radius: 999px; min-height: 3.4rem; font-size: 1.05rem;
+                                           transition: transform .15s ease, background-color .15s ease;}}
+            [class*="st-key-cta_"] button:hover {{transform: translateY(-2px);}}
+            .st-key-cta_main button {{background: #79C000; border-color: #79C000; color: #133A24;
+                                      box-shadow: 0 10px 30px rgba(121,192,0,.35);}}
+            .st-key-cta_main button:hover {{background: #8CD11A; border-color: #8CD11A; color: #133A24;}}
+            .st-key-cta_bench button, .st-key-cta_vote button {{background: rgba(255,255,255,.12);
+                                      border: 2px solid #FFFFFF; color: #FFFFFF; backdrop-filter: blur(4px);}}
+            .st-key-cta_bench button:hover, .st-key-cta_vote button:hover {{background: #FFFFFF; color: #133A24;}}
+            @media (prefers-reduced-motion: reduce) {{[class*="st-key-cta_"] button {{transition: none;}}
+                                                      [class*="st-key-cta_"] button:hover {{transform: none;}}}}
+            </style>""",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="landing-stats">'
+            f'<div><b>{fmt(city["arboles"].sum())}</b>árboles en la ciudad</div>'
+            f'<div><b>{fmt(city["zona_verde_m2"].sum() / 10_000)}</b>hectáreas de parques y jardines</div>'
+            f'<div><b>{fmt(city["bancos"].sum())}</b>bancos en la calle</div></div>',
+            unsafe_allow_html=True,
+        )
+        _, main_col, _ = st.columns([1, 1.3, 1])
+        if main_col.button("Haz de tu barrio un lugar más verde", key="cta_main", use_container_width=True):
+            state.show_login = True
+            st.rerun()
+        _, c1, c2, _ = st.columns([1, 1.1, 1.1, 1], gap="medium")
+        if c1.button("Acerca un banco a tus mayores", key="cta_bench", use_container_width=True):
+            state.show_login = True
+            st.rerun()
+        if c2.button("Vota las propuestas de tu barrio", key="cta_vote", use_container_width=True):
+            state.show_login = True
+            st.rerun()
+        st.stop()
+
     _, center, _ = st.columns([1, 1.15, 1])
     with center, st.container(key="login_card"):
         st.markdown('<h2 class="display section-title" style="text-align:center">Entra en València Futura</h2>'
@@ -203,6 +246,9 @@ if not state.get("user"):
                     st.rerun()
                 st.error("El DNI o la clave no coinciden. Revisa los datos y vuelve a intentarlo.")
         st.caption("Demo: el acceso simula la identificación con Cl@ve y la consulta al padrón municipal.")
+        if st.button("Volver al inicio", type="tertiary"):
+            state.show_login = False
+            st.rerun()
         with st.expander("Vecinos de prueba"):
             st.markdown(
                 "| DNI | Nombre | Empadronado en | Clave |\n|---|---|---|---|\n"
