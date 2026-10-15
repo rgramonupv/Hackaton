@@ -185,6 +185,23 @@ calculado sobre `after-before`. Test:
 
 ## Seguridad, publicación e incorporación
 
+**Publicación bloqueada:** el commit de implementación local es `fd07b00`.
+`git push -u origin feat/astra-mapa` devolvió HTTP 403: acceso denegado a
+`rgradolico-bot`. El conector GitHub confirma la misma identidad y permisos
+`pull=true`, `push=false`. No existe rama remota ni PR creada. No se han cambiado
+credenciales, permisos ni el remoto. Un integrante con acceso de escritura debe
+ejecutar desde este worktree, con su sesión de GitHub autorizada:
+
+```powershell
+git -C C:/Hackaton-astra push -u origin feat/astra-mapa
+```
+
+Después, en GitHub, comparar `main...feat/astra-mapa` y crear **Draft pull request**
+sin fusionar. Título sugerido: `test: audit demo acceptance with isolated database`.
+Descripción: cuatro archivos nuevos; 13/14 pruebas pasan sobre `569d64c`, CA5 falla
+por faltar total cubierto; iframe bloquea clic real en Edge; sin cambios en código
+de Opus. Los comandos de revisión inferiores requieren que ese push haya terminado.
+
 Auditoría: `git fetch origin`, `git ls-remote --heads origin`, `git status`,
 `git branch -a -vv`, `git log`, `git worktree list`, `git diff`. Base remota
 confirmada antes de crear rama. Ningún merge/rebase/cherry-pick ni modificación
