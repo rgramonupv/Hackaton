@@ -475,7 +475,7 @@ with tab_sim:
                 st.rerun()
 
     with left:
-        m = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap")
+        m = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap", scroll_wheel_zoom=False)
         folium.GeoJson(d["barrio"], style_function=lambda _: {
             "color": COLORS["whale"], "fill": False, "weight": 3, "dashArray": "6 4"}).add_to(m)
         for p in d["parques"]:
@@ -543,7 +543,7 @@ with tab_sim:
 def proposal_map(p: dict) -> folium.Map:
     """The barrio with one proposal drawn on it: its new benches/trees and the blocks it leaves uncovered."""
     benches, trees = [tuple(b) for b in json.loads(p["benches"])], [tuple(t) for t in json.loads(p["trees"])]
-    pm = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap")
+    pm = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap", scroll_wheel_zoom=False)
     folium.GeoJson(d["barrio"], style_function=lambda _: {
         "color": COLORS["whale"], "fill": False, "weight": 3, "dashArray": "6 4"}).add_to(pm)
     ok_mask = model.covered_mask(blocks, d["bancos"] + benches, radius, lat0)

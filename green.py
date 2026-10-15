@@ -120,7 +120,7 @@ def render(barrio: str) -> None:
     with left:
         barrios = data.load_barrios()
         values = dict(zip(df["barrio"], df[field]))
-        m = folium.Map(location=[39.47, -0.376], zoom_start=12, tiles="OpenStreetMap")
+        m = folium.Map(location=[39.47, -0.376], zoom_start=12, tiles="OpenStreetMap", scroll_wheel_zoom=False)
         geo = {"type": "FeatureCollection", "features": [
             {**b, "properties": {**b["properties"], "valor": round(values[b["properties"]["nombre"]], 1)}}
             for b in barrios]}
