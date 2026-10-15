@@ -62,11 +62,11 @@ st.markdown(
     }}
     .hero-inner {{position: relative; z-index: 1;}}
     .claims {{display: grid;}}
-    /* Two headlines, 7 s each (14 s cycle). One fades out while the other fades in, with no empty gap. */
-    .claims span {{grid-area: 1 / 1; opacity: 0; animation: claim 14s ease-in-out infinite both;}}
-    .claims span:nth-child(2) {{animation-delay: 7s;}}
-    @keyframes claim {{0% {{opacity: 0; transform: translateY(.4rem);}} 4%, 50% {{opacity: 1; transform: none;}}
-                      54%, 100% {{opacity: 0; transform: translateY(-.4rem);}}}}
+    /* Two headlines, 7 s each (14 s cycle). The first is visible from the very first frame; the swap takes
+       ~0.3 s and both change at the same moment. The negative delay puts the second mid-cycle, so nothing waits. */
+    .claims span {{grid-area: 1 / 1; animation: claim 14s linear infinite;}}
+    .claims span:nth-child(2) {{animation-delay: -7s;}}
+    @keyframes claim {{0%, 48% {{opacity: 1;}} 50%, 98% {{opacity: 0;}} 100% {{opacity: 1;}}}}
     @media (prefers-reduced-motion: reduce) {{
         .claims {{display: block;}} .claims span {{display: block; animation: none;}}
         .claims span:nth-child(2) {{font-size: .55em; margin-top: .6rem;}}
@@ -155,7 +155,7 @@ def fmt(n: float) -> str:
 state = st.session_state
 
 # --- Login: only registered residents can propose and vote ----------------------------
-if not state.get("user"):
+if not state.get("user") and not state.get("guest"):
     # Full-screen photo carousel behind a centred card framed by leaf sprigs (Central Park–style greens).
     st.markdown(
         f"""<style>
@@ -218,7 +218,8 @@ if not state.get("user"):
         ]
         seconds = 5
         sets_html = "".join(
-            f'<div class="stat-set" style="animation-delay:{i * seconds}s;animation-duration:{seconds * len(stat_sets)}s">'
+            f'<div class="stat-set" style="animation-delay:{-((len(stat_sets) - i) % len(stat_sets)) * seconds}s;'
+            f'animation-duration:{seconds * len(stat_sets)}s">'
             + "".join(f"<div><b>{v}</b>{label}</div>" for v, label in group) + "</div>"
             for i, group in enumerate(stat_sets)
         )
@@ -229,14 +230,13 @@ if not state.get("user"):
             .landing-stats {{display: grid; margin: 0 auto 2rem; color: #FFFFFF; text-align: center;
                              text-shadow: 0 2px 12px rgba(0,0,0,.35); min-height: 7.5rem;}}
             .stat-set {{grid-area: 1 / 1; display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem 3.5rem;
-                        opacity: 0; animation: statfade linear infinite;}}
+                        animation: statfade linear infinite;}}
             .stat-set div {{max-width: 16rem;}}
             .stat-set b {{display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 3.4rem;
                           font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;}}
-            @keyframes statfade {{0% {{opacity: 0;}} 5% {{opacity: 1;}} 30% {{opacity: 1;}} 35% {{opacity: 0;}}
-                                  100% {{opacity: 0;}}}}
+            @keyframes statfade {{0%, 31% {{opacity: 1;}} 33.3%, 98% {{opacity: 0;}} 100% {{opacity: 1;}}}}
             @media (prefers-reduced-motion: reduce) {{
-                .stat-set {{animation: none;}} .stat-set:first-child {{opacity: 1;}}
+                .stat-set {{animation: none; opacity: 0;}} .stat-set:first-child {{opacity: 1;}}
             }}
             [class*="st-key-cta_"] button {{border-radius: 999px; min-height: 3.4rem; font-size: 1.05rem;
                                            transition: transform .15s ease, background-color .15s ease;}}
@@ -247,6 +247,8 @@ if not state.get("user"):
             .st-key-cta_bench button, .st-key-cta_vote button {{background: rgba(255,255,255,.12);
                                       border: 2px solid #FFFFFF; color: #FFFFFF; backdrop-filter: blur(4px);}}
             .st-key-cta_bench button:hover, .st-key-cta_vote button:hover {{background: #FFFFFF; color: #133A24;}}
+            .st-key-cta_login button {{background: transparent; border: 0; color: #FFFFFF; min-height: 2.4rem;
+                                       text-decoration: underline; text-underline-offset: 4px; box-shadow: none;}}
             @media (prefers-reduced-motion: reduce) {{[class*="st-key-cta_"] button {{transition: none;}}
                                                       [class*="st-key-cta_"] button:hover {{transform: none;}}}}
             .st-key-landing_more {{position: relative; z-index: 1; background: #F1F6EE; margin: 12vh -3rem -3rem;
@@ -272,13 +274,18 @@ if not state.get("user"):
         st.markdown(f'<div class="landing-stats" aria-live="off">{sets_html}</div>', unsafe_allow_html=True)
         _, main_col, _ = st.columns([1, 1.3, 1])
         if main_col.button("Haz de tu barrio un lugar más verde", key="cta_main", use_container_width=True):
-            state.show_login = True
+            state.guest = True
             st.rerun()
         _, c1, c2, _ = st.columns([1, 1.1, 1.1, 1], gap="medium")
         if c1.button("Acerca un banco a tus mayores", key="cta_bench", use_container_width=True):
-            state.show_login = True
+            state.guest = True
             st.rerun()
         if c2.button("Vota las propuestas de tu barrio", key="cta_vote", use_container_width=True):
+            state.show_login = True
+            st.rerun()
+        _, login_col, _ = st.columns([1, 1.3, 1])
+        if login_col.button("Ya tengo cuenta: iniciar sesión", key="cta_login", type="tertiary",
+                            use_container_width=True):
             state.show_login = True
             st.rerun()
 
@@ -305,7 +312,7 @@ if not state.get("user"):
                     "Con València Futura cada vecino puede ver qué tiene cerca y proponer lo que falta."
                 )
                 if st.button("Descubre tu barrio", key="cta_end", use_container_width=True):
-                    state.show_login = True
+                    state.guest = True
                     st.rerun()
             st.markdown(
                 '<div class="statement"><p class="display">Una administración que detecta lo que falta antes de '
@@ -329,7 +336,7 @@ if not state.get("user"):
             if st.form_submit_button("Entrar", type="primary", use_container_width=True):
                 user = db.authenticate(dni, pin)
                 if user:
-                    state.user = user
+                    state.update(user=user, guest=False)
                     st.rerun()
                 st.error("El DNI o la clave no coinciden. Revisa los datos y vuelve a intentarlo.")
         st.caption("Demo: el acceso simula la identificación con Cl@ve y la consulta al padrón municipal.")
@@ -343,27 +350,46 @@ if not state.get("user"):
             )
     st.stop()
 
-user = state.user
+user = state.get("user")
+guest = user is None
+
+
+def require_login() -> None:
+    """Send a visitor to the login; the draft on the map is kept in the session."""
+    state.update(guest=False, show_login=True)
+    st.rerun()
+
 
 # --- Sidebar: user, neighbourhood and decision variables ------------------------------
 barrio_names = sorted(b["properties"]["nombre"] for b in data.load_barrios())
 with st.sidebar:
     st.markdown('<p class="display" style="font-size:2rem">València Futura</p>', unsafe_allow_html=True)
-    st.markdown(f"**{html.escape(user['name'])}**, empadronado/a en {user['barrio'].title()}")
-    if st.button("Cerrar sesión"):
-        state.clear()
-        st.rerun()
-    barrio_name = st.selectbox("Barrio que estás viendo", barrio_names, index=barrio_names.index(user["barrio"]))
-    own_barrio = barrio_name == user["barrio"]
+    if guest:
+        st.markdown("Estás de visita: puedes explorarlo todo. Para publicar, votar o sugerir, inicia sesión.")
+        if st.button("Iniciar sesión", type="primary"):
+            require_login()
+    else:
+        st.markdown(f"**{html.escape(user['name'])}**, empadronado/a en {user['barrio'].title()}")
+        if st.button("Cerrar sesión"):
+            state.clear()
+            st.rerun()
+    default_barrio = state.get("barrio") or (user["barrio"] if user else "RUSSAFA")
+    barrio_name = st.selectbox("Barrio que estás viendo", barrio_names, index=barrio_names.index(default_barrio))
+    own_barrio = bool(user) and barrio_name == user["barrio"]
     st.subheader("Variables de decisión")
-    radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25)
+    radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25,
+                       help="Consideramos que una persona tiene un banco cerca si vive a menos de esta distancia.")
     cost_bench = st.number_input("Coste por banco (€)", 100, 5000, 800, 50)
     cost_tree = st.number_input("Coste por árbol (€)", 100, 5000, 400, 50)
-    st.subheader("Población estimada")
-    st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
-    mean_residents = st.slider("Habitantes medios por manzana", 20, 500, 150, 10)
-    pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
-    pct_children = st.slider("Menores de 15 años (%)", 5, 30, 13)
+    st.subheader("¿Cuánta gente vive en el barrio?")
+    st.caption("El Ayuntamiento no publica cuántas personas viven en cada manzana ni sus edades, así que lo "
+               "estimamos. Ajusta estos valores si conoces mejor tu barrio.")
+    mean_residents = st.slider("Personas que viven en una manzana normal", 20, 500, 150, 10,
+                               help="Las manzanas más grandes cuentan proporcionalmente más vecinos.")
+    pct_elderly = st.slider("De cada 100 vecinos, ¿cuántos tienen más de 65 años?", 5, 40, 22,
+                            help="En València son unos 22 de cada 100.")
+    pct_children = st.slider("De cada 100 vecinos, ¿cuántos son niños (menos de 15 años)?", 5, 30, 13,
+                             help="En València son unos 13 de cada 100.")
     st.subheader("Zonas verdes")
     st.caption("Criterio de la OMS: una zona verde de al menos 0,5 ha a 300 m de casa.")
     green_radius = st.slider("Distancia máxima a una zona verde (m)", 100, 1000, 300, 50)
@@ -428,8 +454,11 @@ with tab_sim:
         with st.form("save", border=False):
             title = st.text_input("Nombre de la propuesta", placeholder="Bancos junto al mercado de Russafa…",
                                   autocomplete="off")
-            if st.form_submit_button("Publicar propuesta", type="primary", use_container_width=True,
+            if st.form_submit_button("Inicia sesión para publicar" if guest else "Publicar propuesta",
+                                     type="primary", use_container_width=True,
                                      disabled=not (state.new_benches or state.new_trees)):
+                if guest:
+                    require_login()
                 db.save_proposal(
                     barrio_name, title or "Propuesta sin nombre", user["name"], state.new_benches,
                     state.new_trees, cost, before, after,
@@ -514,7 +543,7 @@ VOTE_MESSAGES = {
 
 with tab_vote:
     proposals = db.ranking(barrio_name)
-    mine = [p for p in proposals if p.get("author_dni") == user["dni"]]
+    mine = [p for p in proposals if user and p.get("author_dni") == user["dni"]]
     if mine:
         st.markdown('<h2 class="display section-title">Tus propuestas</h2>', unsafe_allow_html=True)
         for p in mine:
@@ -538,7 +567,9 @@ with tab_vote:
     if not proposals:
         st.info("Todavía no hay propuestas en este barrio. Diseña la primera en «Diseña tu propuesta».")
     else:
-        if own_barrio:
+        if guest:
+            st.caption("Estás de visita: al pulsar «A favor» o «En contra» te pediremos iniciar sesión.")
+        elif own_barrio:
             st.caption(f"Votas como {user['name']}: un voto por propuesta, a favor o en contra (puedes cambiarlo). "
                        "Las cifras de población son estimadas.")
         else:
@@ -550,7 +581,7 @@ with tab_vote:
             gain = p["elderly_after"] - p["elderly_before"]
             per_person = f"{fmt(efficiency[p['id']])} € por persona" if p["id"] in efficiency else "sin mayores nuevos cubiertos"
             badge = '<span class="best">La más eficiente</span>' if p["id"] == best_id else ""
-            badge += '<span class="mine">Tu propuesta</span>' if p.get("author_dni") == user["dni"] else ""
+            badge += '<span class="mine">Tu propuesta</span>' if user and p.get("author_dni") == user["dni"] else ""
             w_for, w_against = 100 * p["votes_for"] / max_total, 100 * p["votes_against"] / max_total
             row, action = st.columns([4, 2], vertical_alignment="center")
             row.markdown(
@@ -564,11 +595,13 @@ with tab_vote:
                 </div></div>""",
                 unsafe_allow_html=True,
             )
-            current = db.my_vote(p["id"], user["dni"])
+            current = db.my_vote(p["id"], user["dni"]) if user else None
             b_for, b_against = action.columns(2)
             for col, value, label in [(b_for, 1, "A favor"), (b_against, -1, "En contra")]:
-                if col.button(label, key=f"vote_{p['id']}_{value}", disabled=not own_barrio, use_container_width=True,
+                if col.button(label, key=f"vote_{p['id']}_{value}", disabled=not (guest or own_barrio), use_container_width=True,
                               type="primary" if current == value else "secondary"):
+                    if guest:
+                        require_login()
                     state.flash = VOTE_MESSAGES[db.vote(p["id"], user["dni"], value)]
                     st.rerun()
             showing = state.get("view_pid") == p["id"]
@@ -591,7 +624,9 @@ with tab_vote:
                     text = st.text_area("Propón una mejora para esta propuesta",
                                         placeholder="Por ejemplo: que los bancos tengan respaldo y sombra…",
                                         max_chars=500)
-                    if st.form_submit_button("Enviar mejora"):
+                    if st.form_submit_button("Inicia sesión para enviar" if guest else "Enviar mejora"):
+                        if guest:
+                            require_login()
                         result = db.add_suggestion(p["id"], user["dni"], user["name"], text)
                         state.flash = {"ok": "Mejora enviada al autor de la propuesta.",
                                        "empty": "Escribe la mejora antes de enviarla."}[result]

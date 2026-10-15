@@ -119,3 +119,9 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Titular: la salida de una frase y la entrada de la otra se solapan (sin hueco vacío), 7 s cada una.
 - Cualquier vecino registrado puede publicar propuestas y sugerir mejoras en cualquier barrio; solo votan los empadronados.
 - Evidencia: Pepe (Benicalap) publica en Russafa y sugiere una mejora; botones de voto desactivados y `db.vote` → wrong_barrio.
+
+## Modo visitante, textos claros y cambios instantáneos (2026-10-15 ~16:45)
+- Portada → la app sin login (visitante): ve mapa, datos y propuestas. Publicar, votar o sugerir → login; el borrador del mapa se conserva tras entrar.
+- Titular y cifras de portada: visibles desde el primer fotograma, cambio en ~0,3 s, sin esperas (retrasos negativos).
+- Variables de población en lenguaje claro ("De cada 100 vecinos, ¿cuántos tienen más de 65 años?") con ayudas.
+- Evidencia (AppTest): visitante entra, "Inicia sesión para publicar" → login → borrador intacto → "Publicar propuesta"; voto de visitante → login, 0 votos guardados.
