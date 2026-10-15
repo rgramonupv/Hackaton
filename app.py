@@ -25,8 +25,19 @@ COLORS = {
     "bench": "#3B2A1E",
     "covered": "#D6E9CF",
 }
-HERO_IMG = "app/static/hero.jpg"
-PHOTO_CREDIT = "Foto: Jardí del Túria, Acediscovery (CC BY 4.0, Wikimedia Commons)"
+SLIDES = [f"app/static/slide{i}.jpg" for i in range(1, 6)]
+SLIDE_SECONDS = 6
+PHOTO_CREDIT = ("Fotos: Joanbanjo, Pacopac, isaacpanoramio y Acediscovery "
+                "(CC BY-SA / CC BY, Wikimedia Commons)")
+
+
+def carousel() -> str:
+    """Cross-fading background photos (pure CSS); static first photo under reduced motion."""
+    total = SLIDE_SECONDS * len(SLIDES)
+    return '<div class="slides" aria-hidden="true">' + "".join(
+        f'<i style="background-image:url({url});animation-delay:{i * SLIDE_SECONDS}s;'
+        f'animation-duration:{total}s"></i>' for i, url in enumerate(SLIDES)
+    ) + "</div>"
 
 st.markdown(
     f"""
@@ -37,13 +48,21 @@ st.markdown(
     .display {{font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; font-weight: 800;
                line-height: .95; letter-spacing: .005em; margin: 0;}}
 
-    .hero {{position: relative; margin: 0 -3rem 2rem; min-height: 440px; display: flex; align-items: flex-end;
-            background: linear-gradient(90deg, rgba(19,58,36,.92) 0%, rgba(19,58,36,.65) 45%, rgba(19,58,36,.1) 100%),
-                        url('{HERO_IMG}') center 35% / cover no-repeat;}}
+    .hero {{position: relative; margin: 0 -3rem 2rem; min-height: 440px; display: flex; align-items: flex-end; overflow: hidden;}}
+    .slides, .slides i {{position: absolute; inset: 0;}}
+    .slides i {{background: center 40% / cover no-repeat; opacity: 0; animation: fade linear infinite;}}
+    .slides::after {{content: ""; position: absolute; inset: 0;
+                     background: linear-gradient(90deg, rgba(19,58,36,.92) 0%, rgba(19,58,36,.6) 45%, rgba(19,58,36,.1) 100%);}}
+    .login-hero .slides::after {{background: linear-gradient(0deg, rgba(19,58,36,.9) 0%, rgba(19,58,36,.2) 70%);}}
+    @keyframes fade {{0% {{opacity: 0;}} 4% {{opacity: 1;}} 20% {{opacity: 1;}} 24% {{opacity: 0;}} 100% {{opacity: 0;}}}}
+    @media (prefers-reduced-motion: reduce) {{
+        .slides i {{animation: none;}} .slides i:first-child {{opacity: 1;}}
+    }}
+    .hero-inner, .login-hero .display {{position: relative; z-index: 1;}}
     .hero-inner {{padding: 6rem 3rem 2.6rem; max-width: 62rem; color: {COLORS['ozone']};}}
     .hero .display {{font-size: clamp(2.6rem, 5.2vw, 5rem); color: {COLORS['ozone']};}}
     .hero p {{font-size: 1.15rem; max-width: 46ch; margin: 1rem 0 0; opacity: .92;}}
-    .hero .credit {{position: absolute; right: 1rem; bottom: .5rem; font-size: .72rem; opacity: .7; color: #fff;}}
+    .hero .credit {{position: absolute; z-index: 1; right: 1rem; bottom: .5rem; font-size: .72rem; opacity: .7; color: #fff;}}
 
     .stats {{display: flex; flex-wrap: wrap; gap: 2.5rem; margin: 0 0 1.6rem; color: {COLORS['whale']};}}
     .stats div {{font-variant-numeric: tabular-nums;}}
@@ -74,14 +93,13 @@ st.markdown(
     .rank-title {{font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 700;
                   text-transform: uppercase; color: {COLORS['whale']}; overflow-wrap: anywhere;}}
     .rank-meta {{color: {COLORS['whale70']}; font-variant-numeric: tabular-nums;}}
-    .bar {{height: 8px; background: #E9E4DA; margin: .45rem 0;}}
+    .bar {{height: 8px; background: #DCE8D5; margin: .45rem 0;}}
     .bar > div {{height: 100%; background: {COLORS['biodiversity']};}}
     .best {{display: inline-block; background: {COLORS['climate']}; color: {COLORS['whale']}; font-size: .85rem;
             padding: .1rem .6rem; margin-left: .6rem; vertical-align: middle; letter-spacing: .03em;}}
 
-    .login-hero {{min-height: 78vh; display: flex; align-items: flex-end; margin: 0 0 0 -3rem;
-                  background: linear-gradient(0deg, rgba(19,58,36,.9) 0%, rgba(19,58,36,.25) 70%),
-                              url('{HERO_IMG}') 30% center / cover no-repeat;}}
+    .login-hero {{position: relative; overflow: hidden; min-height: 78vh; display: flex; align-items: flex-end;
+                  margin: 0 0 0 -3rem;}}
     .login-hero .display {{font-size: clamp(2.8rem, 5vw, 4.6rem); color: {COLORS['ozone']};
                            padding: 0 3rem 2.4rem;}}
     .login-hero small {{display: block; font-family: 'Montserrat', sans-serif; text-transform: none;
@@ -129,7 +147,7 @@ if not state.get("user"):
     photo, form_col = st.columns([1.35, 1], gap="large", vertical_alignment="center")
     with photo:
         st.markdown(
-            f"""<div class="login-hero">
+            f"""<div class="login-hero">{carousel()}
             <h1 class="display">Tu barrio se decide con datos<small>Propón mejoras para tu calle con datos
             reales del Ayuntamiento y vota las de tus vecinos.</small></h1></div>
             <p style="font-size:.72rem;color:{COLORS['whale70']};margin:.4rem 0 0">{PHOTO_CREDIT}</p>""",
@@ -194,7 +212,7 @@ cost = len(state.new_benches) * cost_bench + len(state.new_trees) * cost_tree
 uncovered = elderly.sum() - after
 
 st.markdown(
-    f"""<section class="hero">
+    f"""<section class="hero">{carousel()}
     <div class="hero-inner">
     <h1 class="display">{fmt(uncovered)} personas mayores de {barrio_name.title()} no tienen un banco a menos de {radius}&nbsp;m</h1>
     <p>Coloca bancos y árboles en el mapa, mide a cuántos vecinos llegas y publícalo para que el barrio vote.</p>
