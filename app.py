@@ -9,6 +9,7 @@ from streamlit_folium import st_folium
 import data
 import db
 import model
+import ornaments
 
 st.set_page_config(page_title="València Futura", page_icon="🌿", layout="wide")
 
@@ -53,12 +54,11 @@ st.markdown(
     .slides i {{background: center 40% / cover no-repeat; opacity: 0; animation: fade linear infinite;}}
     .slides::after {{content: ""; position: absolute; inset: 0;
                      background: linear-gradient(90deg, rgba(19,58,36,.92) 0%, rgba(19,58,36,.6) 45%, rgba(19,58,36,.1) 100%);}}
-    .login-hero .slides::after {{background: linear-gradient(0deg, rgba(19,58,36,.9) 0%, rgba(19,58,36,.2) 70%);}}
     @keyframes fade {{0% {{opacity: 0;}} 4% {{opacity: 1;}} 20% {{opacity: 1;}} 24% {{opacity: 0;}} 100% {{opacity: 0;}}}}
     @media (prefers-reduced-motion: reduce) {{
         .slides i {{animation: none;}} .slides i:first-child {{opacity: 1;}}
     }}
-    .hero-inner, .login-hero .display {{position: relative; z-index: 1;}}
+    .hero-inner {{position: relative; z-index: 1;}}
     .claims {{display: grid;}}
     .claims span {{grid-area: 1 / 1; animation: claim 16s ease-in-out infinite;}}
     .claims span:nth-child(2) {{animation-delay: -8s;}}
@@ -107,18 +107,10 @@ st.markdown(
     .best {{display: inline-block; background: {COLORS['climate']}; color: {COLORS['whale']}; font-size: .85rem;
             padding: .1rem .6rem; margin-left: .6rem; vertical-align: middle; letter-spacing: .03em;}}
 
-    .login-hero {{position: relative; overflow: hidden; min-height: 78vh; display: flex; align-items: flex-end;
-                  margin: 0 0 0 -3rem;}}
-    .login-hero .display {{font-size: clamp(2.8rem, 5vw, 4.6rem); color: {COLORS['ozone']};
-                           padding: 0 3rem 2.4rem;}}
-    .login-hero small {{display: block; font-family: 'Montserrat', sans-serif; text-transform: none;
-                        font-weight: 400; font-size: 1.05rem; line-height: 1.5; margin-top: 1rem; opacity: .9;}}
     @media (max-width: 760px) {{
         .block-container {{padding: 0 1rem 2rem;}}
         .hero {{margin: 0 -1rem 1.5rem; min-height: 360px;}}
         .hero-inner {{padding: 5rem 1rem 2rem;}}
-        .login-hero {{margin: 0 -1rem; min-height: 50vh;}}
-        .login-hero .display {{padding: 0 1rem 1.5rem;}}
     }}
     </style>
     """,
@@ -153,19 +145,50 @@ state = st.session_state
 
 # --- Login: only registered residents can propose and vote ----------------------------
 if not state.get("user"):
-    photo, form_col = st.columns([1.35, 1], gap="large", vertical_alignment="center")
-    with photo:
-        st.markdown(
-            f"""<div class="login-hero">{carousel()}
-            <h1 class="display">Tu barrio se decide con datos<small>Propón mejoras para tu calle con datos
-            reales del Ayuntamiento y vota las de tus vecinos.</small></h1></div>
-            <p style="font-size:.72rem;color:{COLORS['whale70']};margin:.4rem 0 0">{PHOTO_CREDIT}</p>""",
-            unsafe_allow_html=True,
-        )
-    with form_col:
-        st.markdown('<h2 class="display section-title">Entra en València Futura</h2>', unsafe_allow_html=True)
+    # Full-screen photo carousel behind a centred card framed by leaf sprigs (Central Park–style greens).
+    st.markdown(
+        f"""<style>
+        [data-testid="stApp"], [data-testid="stMain"] {{background: transparent;}}
+        .login-bg {{position: fixed; inset: 0; z-index: 0;}}
+        .login-bg .slides::after {{background: radial-gradient(ellipse at center, rgba(19,58,36,.35) 0%,
+                                   rgba(19,58,36,.8) 75%);}}
+        [data-testid="stMainBlockContainer"] {{position: relative; z-index: 1; padding-top: 6vh;}}
+        .login-title {{text-align: center; color: #FFFFFF; font-size: clamp(2.6rem, 5vw, 4.4rem);
+                       text-shadow: 0 2px 18px rgba(0,0,0,.35); margin: 0 auto .4rem; max-width: 18ch;}}
+        .login-sub {{text-align: center; color: #F1F6EE; font-size: 1.1rem; margin: 0 auto 2.2rem; max-width: 44ch;}}
+        .st-key-login_card {{position: relative; background: rgba(255,255,255,.96); border-radius: 22px;
+                             padding: 2.2rem 2.2rem 1.6rem; border: 2px solid #C8E379;
+                             box-shadow: 0 24px 60px rgba(10,35,20,.35);}}
+        .st-key-login_card::before, .st-key-login_card::after {{content: ""; position: absolute; width: 190px;
+                                                              height: 190px; background: center / contain no-repeat;
+                                                              pointer-events: none;}}
+        .st-key-login_card::before {{background-image: url("{ornaments.SPRIG_A}"); left: -92px; top: -96px;
+                                     transform: rotate(-8deg);}}
+        .st-key-login_card::after {{background-image: url("{ornaments.SPRIG_B}"); right: -90px; bottom: -92px;
+                                    transform: rotate(172deg);}}
+        .leaf-rule {{height: 22px; margin: .2rem 0 1rem; background: url("{ornaments.SPRIG_B}") left center / 70px no-repeat,
+                     linear-gradient(#C8E379, #C8E379) 80px center / calc(100% - 80px) 2px no-repeat;}}
+        .login-credit {{position: fixed; right: 1rem; bottom: .5rem; z-index: 1; font-size: .72rem;
+                        color: rgba(255,255,255,.8);}}
+        @media (max-width: 760px) {{
+            .st-key-login_card {{padding: 1.6rem 1.2rem 1.2rem;}}
+            .st-key-login_card::before, .st-key-login_card::after {{width: 110px; height: 110px;}}
+            .st-key-login_card::before {{left: -40px; top: -60px;}}
+            .st-key-login_card::after {{right: -40px; bottom: -60px;}}
+        }}
+        </style>
+        <div class="login-bg">{carousel()}</div>
+        <h1 class="display login-title">Tu barrio se decide con datos</h1>
+        <p class="login-sub">Propón mejoras para tu calle con datos reales del Ayuntamiento y vota las de tus vecinos.</p>
+        <span class="login-credit">{PHOTO_CREDIT}</span>""",
+        unsafe_allow_html=True,
+    )
+    _, center, _ = st.columns([1, 1.15, 1])
+    with center, st.container(key="login_card"):
+        st.markdown('<h2 class="display section-title" style="text-align:center">Entra en València Futura</h2>'
+                    '<div class="leaf-rule" aria-hidden="true"></div>', unsafe_allow_html=True)
         st.write("Comprobamos tu identidad y tu barrio de empadronamiento: solo votan los vecinos del barrio.")
-        with st.form("login"):
+        with st.form("login", border=False):
             dni = st.text_input("DNI o NIE", placeholder="11111111H…", autocomplete="username")
             pin = st.text_input("Clave", type="password", autocomplete="current-password")
             if st.form_submit_button("Entrar", type="primary", use_container_width=True):

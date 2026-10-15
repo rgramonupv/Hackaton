@@ -89,3 +89,7 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Nuevo indicador: menores de 15 (estimado, % ajustable) cuya manzana no tiene una zona verde ≥ 0,5 ha a ≤ 300 m (criterio OMS Europa 2016; ambos umbrales ajustables). Distancia aproximada a los vértices del parque; solo parques que tocan el barrio.
 - El titular alterna cada 8 s entre mayores sin banco y niños sin zona verde (CSS; con reduced-motion se muestran las dos fijas).
 - Evidencia: Russafa (R=300 m, ≥5.000 m²) → 156 niños; a 500 m → 0. AppTest sin excepciones.
+
+## Login estilo centralparknyc.org (2026-10-15 ~16:20)
+- Carrusel a pantalla completa de fondo con viñeta verde; tarjeta de acceso centrada (blanca, borde lima #C8E379) con ramas de hojas SVG generadas en `ornaments.py` (verdes de centralparknyc.org: #286140, #1E9B18, #79C000, #C8E379).
+- Evidencia: AppTest login → app sin excepciones; health 200.
