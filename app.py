@@ -147,6 +147,12 @@ def barrio_center(barrio: dict) -> tuple[float, float]:
     return sum(p[1] for p in ring) / len(ring), sum(p[0] for p in ring) / len(ring)
 
 
+def shade(t: float, light: str = "#E8F3E1", dark: str = "#133A24") -> str:
+    """Single-hue sequential ramp: 0 → light green, 1 → deep pine green."""
+    a, b = (tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)) for c in (light, dark))
+    return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
+
+
 def fmt(n: float) -> str:
     """Spanish thousands separator."""
     return f"{n:,.0f}".replace(",", ".")
@@ -436,6 +442,7 @@ with tab_sim:
     with right:
         st.markdown('<h2 class="display section-title">Tu propuesta</h2>', unsafe_allow_html=True)
         mode = st.radio("Al hacer clic en el mapa, añade", ["Un banco", "Un árbol"], horizontal=True)
+        color_by = st.radio("Colorea las manzanas por", ["Banco cerca", "Personas mayores", "Niños"], horizontal=True)
         st.metric(f"Mayores con banco a ≤ {radius} m", fmt(after), f"{gained:+,.0f}".replace(",", "."))
         if not guest:
             st.metric("Coste", f"{fmt(cost)} €")
@@ -472,11 +479,23 @@ with tab_sim:
                 "color": COLORS["forest"], "fillColor": COLORS["biodiversity"], "fillOpacity": 0.5, "weight": 1},
                 tooltip=p["properties"].get("nombre")).add_to(m)
         covered = model.covered_mask(blocks, all_benches, radius, lat0)
-        for f, ok, e in zip(d["manzanas"], covered, elderly):
-            folium.GeoJson(f, style_function=lambda _, ok=ok: {
-                "color": "#FFFFFF", "weight": 0.8, "fillColor": COLORS["covered"] if ok else COLORS["climate"],
-                "fillOpacity": 0.4 if ok else 0.6},
-                tooltip=f"{e:.0f} mayores (estimado), {'con banco cerca' if ok else 'sin banco cerca'}").add_to(m)
+        # Sequential shading on a fixed scale (the slider maximum), so raising the % darkens the blocks.
+        if color_by == "Personas mayores":
+            values, vmax = elderly, model.estimate_population(blocks, mean_residents, 40).max()
+        elif color_by == "Niños":
+            values, vmax = children, model.estimate_population(blocks, mean_residents, 30).max()
+        else:
+            values, vmax = None, 1
+        for f, ok, e, k in zip(d["manzanas"], covered, elderly, children):
+            if values is None:
+                fill, opacity = (COLORS["covered"], 0.4) if ok else (COLORS["climate"], 0.6)
+            else:
+                t = min(float((e if color_by == "Personas mayores" else k) / vmax), 1.0) if vmax else 0.0
+                fill, opacity = shade(t), 0.75
+            folium.GeoJson(f, style_function=lambda _, fill=fill, opacity=opacity: {
+                "color": "#FFFFFF", "weight": 0.8, "fillColor": fill, "fillOpacity": opacity},
+                tooltip=f"{e:.0f} mayores y {k:.0f} niños (estimado), "
+                        f"{'con banco cerca' if ok else 'sin banco cerca'}").add_to(m)
         # One GeoJSON layer for thousands of trees keeps the page light (vs. one marker object per tree).
         folium.GeoJson(
             {"type": "FeatureCollection", "features": [
@@ -492,13 +511,21 @@ with tab_sim:
         for lat, lon in state.new_trees:
             folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol nuevo").add_to(m)
 
+        if color_by == "Banco cerca":
+            legend_blocks = (f'<span><i aria-hidden="true" class="sq" style="background:{COLORS["climate"]}"></i>'
+                             f'Manzana sin banco a ≤ {radius}&nbsp;m</span>')
+        else:
+            who = "mayores" if color_by == "Personas mayores" else "niños"
+            legend_blocks = (f'<span><i aria-hidden="true" class="sq" style="background:linear-gradient(90deg,'
+                             f'{shade(0)},{shade(1)});width:48px"></i>Manzanas: de pocos a muchos {who} '
+                             f'(estimado, hasta {fmt(vmax)} por manzana)</span>')
         out = st_folium(m, key="map", height=600, use_container_width=True, returned_objects=["last_clicked"])
         st.markdown(
             f"""<div class="legend" aria-label="Leyenda del mapa">
             <span><i aria-hidden="true" style="background:{COLORS['bench']}"></i>Banco</span>
             <span><i aria-hidden="true" style="background:{COLORS['forest']}"></i>Árbol</span>
             <span><i aria-hidden="true" class="sq" style="background:{COLORS['biodiversity']}"></i>Parque o jardín</span>
-            <span><i aria-hidden="true" class="sq" style="background:{COLORS['climate']}"></i>Manzana sin banco a ≤ {radius}&nbsp;m</span>
+            {legend_blocks}
             <span><i aria-hidden="true" style="background:{COLORS['ocean']}"></i>Lo que tú añades</span></div>""",
             unsafe_allow_html=True,
         )
