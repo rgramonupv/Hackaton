@@ -1,4 +1,4 @@
-# Style inspired by conservation.org: ozone paper, whale navy, forest/biodiversity greens,
+# Style inspired by conservation.org (shifted to green): ozone paper, deep pine green, forest/biodiversity greens,
 # condensed uppercase display type (Barlow Condensed ~ Proxima Nova ExCn) + Montserrat (~ Proxima Nova).
 [server]
 enableStaticServing = true
@@ -11,11 +11,11 @@ base = "light"
 primaryColor = "#257422"
 backgroundColor = "#FAF7F2"
 secondaryBackgroundColor = "#EEECE9"
-textColor = "#152D44"
+textColor = "#133A24"
 greenColor = "#257422"
 orangeColor = "#FC992F"
-blueColor = "#0171A8"
-linkColor = "#0171A8"
+blueColor = "#257422"
+linkColor = "#257422"
 borderColor = "#DDD8CF"
 showWidgetBorder = true
 baseRadius = "4px"
@@ -28,11 +28,11 @@ metricValueFontSize = "2.4rem"
 metricValueFontWeight = 700
 
 [theme.sidebar]
-backgroundColor = "#152D44"
-secondaryBackgroundColor = "#1F3B57"
+backgroundColor = "#133A24"
+secondaryBackgroundColor = "#1E4D31"
 textColor = "#FAF7F2"
 primaryColor = "#4BAA47"
-borderColor = "#2C4A66"
+borderColor = "#2D5E3F"
 
 [browser]
 gatherUsageStats = false

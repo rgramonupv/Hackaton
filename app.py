@@ -12,17 +12,17 @@ import model
 
 st.set_page_config(page_title="València Futura", page_icon="🌿", layout="wide")
 
-# Palette inspired by conservation.org: ozone paper, whale navy, biodiversity/forest greens,
-# climate orange (alert) and ocean blue (what the resident adds).
+# Palette inspired by conservation.org, shifted to green: ozone paper, deep pine green, biodiversity/forest
+# greens, climate orange (alert) and lime (what the resident adds).
 COLORS = {
     "ozone": "#FAF7F2",
-    "whale": "#152D44",
-    "whale70": "#5B6C7C",
+    "whale": "#133A24",
+    "whale70": "#56685B",
     "forest": "#257422",
     "biodiversity": "#4BAA47",
     "climate": "#FC992F",
-    "ocean": "#1096D4",
-    "bench": "#152D44",
+    "ocean": "#8CC63F",
+    "bench": "#3B2A1E",
     "covered": "#D6E9CF",
 }
 HERO_IMG = "app/static/hero.jpg"
@@ -38,7 +38,7 @@ st.markdown(
                line-height: .95; letter-spacing: .005em; margin: 0;}}
 
     .hero {{position: relative; margin: 0 -3rem 2rem; min-height: 440px; display: flex; align-items: flex-end;
-            background: linear-gradient(90deg, rgba(21,45,68,.92) 0%, rgba(21,45,68,.65) 45%, rgba(21,45,68,.1) 100%),
+            background: linear-gradient(90deg, rgba(19,58,36,.92) 0%, rgba(19,58,36,.65) 45%, rgba(19,58,36,.1) 100%),
                         url('{HERO_IMG}') center 35% / cover no-repeat;}}
     .hero-inner {{padding: 6rem 3rem 2.6rem; max-width: 62rem; color: {COLORS['ozone']};}}
     .hero .display {{font-size: clamp(2.6rem, 5.2vw, 5rem); color: {COLORS['ozone']};}}
@@ -80,7 +80,7 @@ st.markdown(
             padding: .1rem .6rem; margin-left: .6rem; vertical-align: middle; letter-spacing: .03em;}}
 
     .login-hero {{min-height: 78vh; display: flex; align-items: flex-end; margin: 0 0 0 -3rem;
-                  background: linear-gradient(0deg, rgba(21,45,68,.9) 0%, rgba(21,45,68,.25) 70%),
+                  background: linear-gradient(0deg, rgba(19,58,36,.9) 0%, rgba(19,58,36,.25) 70%),
                               url('{HERO_IMG}') 30% center / cover no-repeat;}}
     .login-hero .display {{font-size: clamp(2.8rem, 5vw, 4.6rem); color: {COLORS['ozone']};
                            padding: 0 3rem 2.4rem;}}
@@ -259,7 +259,7 @@ with tab_sim:
             folium.CircleMarker([lat, lon], radius=3.5, color=COLORS["bench"], fill=True, fill_opacity=1,
                                 weight=0).add_to(m)
         for lat, lon in state.new_benches:
-            folium.Marker([lat, lon], icon=folium.Icon(color="blue", icon="plus"), tooltip="Banco nuevo").add_to(m)
+            folium.Marker([lat, lon], icon=folium.Icon(color="lightgreen", icon="plus"), tooltip="Banco nuevo").add_to(m)
         for lat, lon in state.new_trees:
             folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol nuevo").add_to(m)
 
