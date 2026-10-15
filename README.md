@@ -27,9 +27,10 @@ streamlit run app.py
 Se abre en el navegador en http://localhost:8501.
 
 ## Cómo se usa
-1. Elige barrio y vecino en la barra lateral; ajusta las variables (radio, costes, población).
-2. **Simulador:** haz clic en el mapa para añadir bancos o árboles. Las manzanas en rojo no tienen banco a ≤ R m.
-3. Publica la propuesta y vótala en la pestaña **Votación** (un voto por vecino y propuesta).
+1. Entra con DNI y clave (demo: `11111111H` / `1234`, Ana de Russafa; Pepe `44444444A` es de Benicalap). El acceso simula Cl@ve + padrón: solo propones y votas en tu barrio.
+2. Elige el barrio que quieres ver en la barra lateral y ajusta las variables (radio, costes, población).
+3. **Simulador:** haz clic en el mapa para añadir bancos o árboles. Las manzanas en rojo no tienen banco a ≤ R m.
+4. Publica la propuesta y vótala en la pestaña **Votación** (un voto por vecino y propuesta).
 
 ## Datos
 | Capa | Fuente (geoportal.valencia.es, OPENDATA) |
@@ -46,4 +47,4 @@ Se abre en el navegador en http://localhost:8501.
 - `app.py` — interfaz Streamlit (mapa, simulador, votación)
 - `data.py` — descarga y caché de capas del geoportal
 - `model.py` — cálculo de cobertura y población estimada
-- `db.py` — propuestas y votos en SQLite (`data/valencia_futura.db`)
+- `db.py` — vecinos (clave con hash PBKDF2), propuestas y votos en SQLite (`data/valencia_futura.db`)

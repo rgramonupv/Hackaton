@@ -72,3 +72,8 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Elemento memorable: titular con la cifra en directo ("En Russafa, N personas mayores no tienen un banco a menos de R m"). Sin degradados ni tarjetas con sombra.
 - Votación: ranking con barra de votos y etiqueta "La más eficiente" (menor € por persona).
 - Evidencia: AppTest sin excepciones; títulos con HTML se escapan; votar suma 1; servidor /_stcore/health = 200.
+
+## Login de vecinos (2026-10-15 ~15:50)
+- Sustituye el selector de vecino por acceso con DNI + clave (simulación de Cl@ve + padrón). Tabla `users` en SQLite con clave en PBKDF2-SHA256 + sal; 4 vecinos de prueba (3 de Russafa, 1 de Benicalap).
+- Reglas: solo se publica y se vota en el barrio de empadronamiento; un voto por DNI y propuesta; otros barrios se pueden explorar.
+- Evidencia (AppTest + db): clave errónea → error; DNI en minúsculas OK; Ana vota → 1; Pepe en Russafa → `wrong_barrio`; Ana repite → `duplicate`; en Benicalap "Publicar" desactivado.

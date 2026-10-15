@@ -11,7 +11,6 @@ import db
 import model
 
 st.set_page_config(page_title="València Futura", page_icon="🌿", layout="wide")
-NEIGHBOURS = ["Ana", "Luis", "Marta", "Pepe"]
 
 # Huerta valenciana palette: huerta green, orange-tree orange, acequia blue, earth ochre, whitewash.
 COLORS = {
@@ -80,13 +79,45 @@ def fmt(n: float) -> str:
     return f"{n:,.0f}".replace(",", ".")
 
 
-# --- Sidebar: neighbourhood, neighbour and decision variables -------------------------
+state = st.session_state
+
+# --- Login: only registered residents can propose and vote ----------------------------
+if not state.get("user"):
+    _, center, _ = st.columns([1, 1.4, 1])
+    with center:
+        st.markdown('<p class="headline">Entra para proponer y votar en tu barrio.</p><div class="azulejo"></div>',
+                    unsafe_allow_html=True)
+        st.write("Comprobamos tu identidad y tu barrio de empadronamiento, así solo votan los vecinos del barrio.")
+        with st.form("login"):
+            dni = st.text_input("DNI o NIE", placeholder="11111111H")
+            pin = st.text_input("Clave", type="password")
+            if st.form_submit_button("Entrar", type="primary", use_container_width=True):
+                user = db.authenticate(dni, pin)
+                if user:
+                    state.user = user
+                    st.rerun()
+                st.error("El DNI o la clave no coinciden. Revisa los datos e inténtalo de nuevo.")
+        st.caption("Demo: el acceso simula la identificación con Cl@ve y la consulta al padrón municipal.")
+        with st.expander("Vecinos de prueba"):
+            st.markdown(
+                "| DNI | Nombre | Empadronado en | Clave |\n|---|---|---|---|\n"
+                + "\n".join(f"| {u[0]} | {u[1]} | {u[2].title()} | {u[3]} |" for u in db.DEMO_USERS)
+            )
+    st.stop()
+
+user = state.user
+
+# --- Sidebar: user, neighbourhood and decision variables ------------------------------
 barrio_names = sorted(b["properties"]["nombre"] for b in data.load_barrios())
 with st.sidebar:
     st.title("València Futura")
     st.caption("El laboratorio de tu barrio")
-    barrio_name = st.selectbox("Barrio", barrio_names, index=barrio_names.index("RUSSAFA"))
-    voter = st.selectbox("Participas como", NEIGHBOURS)
+    st.markdown(f"**{user['name']}**, empadronado/a en {user['barrio'].title()}")
+    if st.button("Cerrar sesión"):
+        state.clear()
+        st.rerun()
+    barrio_name = st.selectbox("Barrio que estás viendo", barrio_names, index=barrio_names.index(user["barrio"]))
+    own_barrio = barrio_name == user["barrio"]
     st.subheader("Variables de decisión")
     radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25)
     cost_bench = st.number_input("Coste por banco (€)", 100, 5000, 800, 50)
@@ -101,7 +132,6 @@ lat0, lon0 = barrio_center(d["barrio"])
 blocks = model.blocks_from_features(d["manzanas"], lat0)
 elderly = model.estimate_population(blocks, mean_residents, pct_elderly)
 
-state = st.session_state
 if state.get("barrio") != barrio_name:
     state.update(barrio=barrio_name, new_benches=[], new_trees=[], last_click=None)
 if state.get("flash"):
@@ -140,12 +170,14 @@ with tab_sim:
         if st.button("Quitar todo lo añadido", disabled=not (state.new_benches or state.new_trees)):
             state.update(new_benches=[], new_trees=[])
             st.rerun()
+        if not own_barrio:
+            st.info(f"Puedes explorar {barrio_name.title()}, pero solo publicas propuestas en {user['barrio'].title()}.")
         with st.form("save", border=False):
             title = st.text_input("Nombre de la propuesta", placeholder="Bancos junto al mercado de Russafa")
             if st.form_submit_button("Publicar propuesta", type="primary",
-                                     disabled=not (state.new_benches or state.new_trees)):
+                                     disabled=not own_barrio or not (state.new_benches or state.new_trees)):
                 db.save_proposal(
-                    barrio_name, title or "Propuesta sin nombre", voter, state.new_benches, state.new_trees,
+                    barrio_name, title or "Propuesta sin nombre", user["name"], state.new_benches, state.new_trees,
                     cost, before, after,
                     {"radius": radius, "mean_residents": mean_residents, "pct_elderly": pct_elderly},
                 )
@@ -199,8 +231,11 @@ with tab_vote:
     if not proposals:
         st.info("Todavía no hay propuestas en este barrio. Diseña la primera en la otra pestaña.")
     else:
-        st.caption(f"Votas como {voter}. Cada persona puede votar una vez cada propuesta. "
-                   "Las cifras de población son estimadas.")
+        if own_barrio:
+            st.caption(f"Votas como {user['name']}. Cada vecino puede votar una vez cada propuesta. "
+                       "Las cifras de población son estimadas.")
+        else:
+            st.info(f"Solo los vecinos empadronados en {barrio_name.title()} pueden votar aquí.")
         efficiency = {p["id"]: p["cost"] / g for p in proposals if (g := p["elderly_after"] - p["elderly_before"]) > 0}
         best_id = min(efficiency, key=efficiency.get) if efficiency else None
         max_votes = max(p["votes"] for p in proposals) or 1
@@ -217,7 +252,11 @@ with tab_vote:
                 {gain:+.0f} mayores con banco cerca, {per_person}.</div></div></div>""",
                 unsafe_allow_html=True,
             )
-            if action.button("Votar", key=f"vote_{p['id']}"):
-                state.flash = "Voto registrado." if db.vote(p["id"], voter) else f"{voter} ya había votado esta propuesta."
+            if action.button("Votar", key=f"vote_{p['id']}", disabled=not own_barrio):
+                state.flash = {
+                    "ok": "Voto registrado.",
+                    "duplicate": "Ya habías votado esta propuesta.",
+                    "wrong_barrio": "Solo pueden votar los vecinos empadronados en este barrio.",
+                }[db.vote(p["id"], user["dni"])]
                 st.rerun()
             st.divider()
