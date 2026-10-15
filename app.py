@@ -244,9 +244,9 @@ if not state.get("user") and not state.get("guest"):
             .st-key-cta_main button, .st-key-cta_end button {{background: #79C000; border-color: #79C000;
                                       color: #133A24; box-shadow: 0 10px 30px rgba(121,192,0,.35);}}
             .st-key-cta_main button:hover, .st-key-cta_end button:hover {{background: #8CD11A; color: #133A24;}}
-            .st-key-cta_bench button, .st-key-cta_vote button {{background: rgba(255,255,255,.12);
+            .st-key-cta_discover button {{background: rgba(255,255,255,.12);
                                       border: 2px solid #FFFFFF; color: #FFFFFF; backdrop-filter: blur(4px);}}
-            .st-key-cta_bench button:hover, .st-key-cta_vote button:hover {{background: #FFFFFF; color: #133A24;}}
+            .st-key-cta_discover button:hover {{background: #FFFFFF; color: #133A24;}}
             .st-key-cta_login button {{background: transparent; border: 0; color: #FFFFFF; min-height: 2.4rem;
                                        text-decoration: underline; text-underline-offset: 4px; box-shadow: none;}}
             @media (prefers-reduced-motion: reduce) {{[class*="st-key-cta_"] button {{transition: none;}}
@@ -276,12 +276,9 @@ if not state.get("user") and not state.get("guest"):
         if main_col.button("Haz de tu barrio un lugar más verde", key="cta_main", use_container_width=True):
             state.guest = True
             st.rerun()
-        _, c1, c2, _ = st.columns([1, 1.1, 1.1, 1], gap="medium")
-        if c1.button("Acerca un banco a tus mayores", key="cta_bench", use_container_width=True):
+        _, discover_col, _ = st.columns([1, 1.3, 1])
+        if discover_col.button("Descubre tu barrio", key="cta_discover", use_container_width=True):
             state.guest = True
-            st.rerun()
-        if c2.button("Vota las propuestas de tu barrio", key="cta_vote", use_container_width=True):
-            state.show_login = True
             st.rerun()
         _, login_col, _ = st.columns([1, 1.3, 1])
         if login_col.button("Ya tengo cuenta: iniciar sesión", key="cta_login", type="tertiary",
@@ -381,15 +378,11 @@ with st.sidebar:
                        help="Consideramos que una persona tiene un banco cerca si vive a menos de esta distancia.")
     cost_bench = st.number_input("Coste por banco (€)", 100, 5000, 800, 50)
     cost_tree = st.number_input("Coste por árbol (€)", 100, 5000, 400, 50)
-    st.subheader("¿Cuánta gente vive en el barrio?")
-    st.caption("El Ayuntamiento no publica cuántas personas viven en cada manzana ni sus edades, así que lo "
-               "estimamos. Ajusta estos valores si conoces mejor tu barrio.")
-    mean_residents = st.slider("Personas que viven en una manzana normal", 20, 500, 150, 10,
-                               help="Las manzanas más grandes cuentan proporcionalmente más vecinos.")
-    pct_elderly = st.slider("De cada 100 vecinos, ¿cuántos tienen más de 65 años?", 5, 40, 22,
-                            help="En València son unos 22 de cada 100.")
-    pct_children = st.slider("De cada 100 vecinos, ¿cuántos son niños (menos de 15 años)?", 5, 30, 13,
-                             help="En València son unos 13 de cada 100.")
+    st.subheader("Población estimada")
+    st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
+    mean_residents = st.slider("Habitantes medios por manzana", 20, 500, 150, 10)
+    pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
+    pct_children = st.slider("Menores de 15 años (%)", 5, 30, 13)
     st.subheader("Zonas verdes")
     st.caption("Criterio de la OMS: una zona verde de al menos 0,5 ha a 300 m de casa.")
     green_radius = st.slider("Distancia máxima a una zona verde (m)", 100, 1000, 300, 50)
