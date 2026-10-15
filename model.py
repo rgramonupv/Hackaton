@@ -64,3 +64,16 @@ def green_space_points(parks: list[dict], min_area_m2: float) -> list[tuple[floa
         for poly in [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]:
             points += [(lat, lon) for lon, lat in poly[0]]
     return points
+
+
+def point_in_polygon(lat: float, lon: float, geometry: dict) -> bool:
+    """Ray casting on (Multi)Polygon outer rings given as [lon, lat]."""
+    polys = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+    for poly in polys:
+        ring, inside = poly[0], False
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+            if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
+                inside = not inside
+        if inside:
+            return True
+    return False

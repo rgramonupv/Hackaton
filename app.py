@@ -8,6 +8,7 @@ from streamlit_folium import st_folium
 
 import data
 import db
+import green
 import model
 import ornaments
 
@@ -176,11 +177,15 @@ if not state.get("user"):
             .st-key-login_card::before {{left: -40px; top: -60px;}}
             .st-key-login_card::after {{right: -40px; bottom: -60px;}}
         }}
-        </style>
-        <div class="login-bg">{carousel()}</div>
-        <h1 class="display login-title">Tu barrio se decide con datos</h1>
-        <p class="login-sub">Propón mejoras para tu calle con datos reales del Ayuntamiento y vota las de tus vecinos.</p>
-        <span class="login-credit">{PHOTO_CREDIT}</span>""",
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    # No indentation inside this HTML: after a <style> block, indented lines would render as a code block.
+    st.markdown(
+        f'<div class="login-bg">{carousel()}</div>'
+        '<h1 class="display login-title">Tu barrio se decide con datos</h1>'
+        '<p class="login-sub">Propón mejoras para tu calle con datos reales del Ayuntamiento y vota las de tus '
+        f'vecinos.</p><span class="login-credit">{PHOTO_CREDIT}</span>',
         unsafe_allow_html=True,
     )
     _, center, _ = st.columns([1, 1.15, 1])
@@ -270,7 +275,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab_sim, tab_vote = st.tabs(["Diseña tu propuesta", "Vota las propuestas"])
+tab_sim, tab_vote, tab_green = st.tabs(["Diseña tu propuesta", "Vota las propuestas", "València verde"])
 
 # --- Simulator ------------------------------------------------------------------------
 with tab_sim:
@@ -314,9 +319,13 @@ with tab_sim:
                 "color": "#FFFFFF", "weight": 0.8, "fillColor": COLORS["covered"] if ok else COLORS["climate"],
                 "fillOpacity": 0.4 if ok else 0.6},
                 tooltip=f"{e:.0f} mayores (estimado), {'con banco cerca' if ok else 'sin banco cerca'}").add_to(m)
-        for lat, lon in d["arboles"]:
-            folium.CircleMarker([lat, lon], radius=2.5, color=COLORS["forest"], fill=True, fill_opacity=0.8,
-                                weight=0).add_to(m)
+        # One GeoJSON layer for thousands of trees keeps the page light (vs. one marker object per tree).
+        folium.GeoJson(
+            {"type": "FeatureCollection", "features": [
+                {"type": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [lon, lat]}}
+                for lat, lon in d["arboles"]]},
+            marker=folium.CircleMarker(radius=2.5, color=COLORS["forest"], fill=True, fill_opacity=0.8, weight=0),
+        ).add_to(m)
         for lat, lon in d["bancos"]:
             folium.CircleMarker([lat, lon], radius=3.5, color=COLORS["bench"], fill=True, fill_opacity=1,
                                 weight=0).add_to(m)
@@ -377,3 +386,7 @@ with tab_vote:
                 }[db.vote(p["id"], user["dni"])]
                 st.rerun()
             st.divider()
+
+# --- València verde: city-wide green data -------------------------------------------
+with tab_green:
+    green.render(barrio_name)

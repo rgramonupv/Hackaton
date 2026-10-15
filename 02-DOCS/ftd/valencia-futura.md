@@ -93,3 +93,9 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 ## Login estilo centralparknyc.org (2026-10-15 ~16:20)
 - Carrusel a pantalla completa de fondo con viñeta verde; tarjeta de acceso centrada (blanca, borde lima #C8E379) con ramas de hojas SVG generadas en `ornaments.py` (verdes de centralparknyc.org: #286140, #1E9B18, #79C000, #C8E379).
 - Evidencia: AppTest login → app sin excepciones; health 200.
+
+## Login arreglado + pestaña "València verde" + bug de descarga (2026-10-15 ~16:25)
+- Login: tras `<style>`, el HTML sangrado se pintaba como bloque de código (Markdown). Ahora va en un `st.markdown` aparte sin sangría.
+- **Bug de datos:** la paginación por offset del geoportal devolvía páginas cortas (522 de 1.000, `exceededTransferLimit`) y orden inestable (duplicados). Ahora se piden los `objectIds` y se descargan por lotes de 500. Russafa: 522 → **2.945 árboles** (el campo `barrio` da 2.952; diferencia por árboles en el borde). Caché regenerada.
+- Pestaña "València verde" (`green.py`): agregados en servidor (GROUP BY) de arbolado y bancos por barrio, especies; parques asignados a barrio por punto-en-polígono. Coroplético (m² verdes/ha o árboles/ha), ranking top 15 + barrio propio resaltado (paleta validada con dataviz: CVD ΔE 19,8; WARN de contraste → etiqueta directa + tabla), top 10 especies, tabla completa.
+- Evidencia: AppTest login → app → pestañas sin excepciones; Russafa puesto 14/88 en árboles, 1.097 m² verdes/ha (mediana 525).

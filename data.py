@@ -14,31 +14,25 @@ LAYERS = {
     "manzanas": "UrbanismoEInfraestructuras/MapServer/215",
 }
 CACHE_DIR = Path(__file__).parent / "data" / "cache"
-PAGE_SIZE = 1000
+PAGE_SIZE = 500
 
 
 def _query(layer: str, extra: dict) -> list[dict]:
-    """Run a paginated geojson query and return all features (WGS84)."""
-    url = f"{BASE}/{LAYERS[layer]}/query"
-    features, offset = [], 0
-    while True:
-        params = {
-            "where": "1=1",
-            "outFields": "*",
-            "outSR": 4326,
-            "f": "geojson",
-            "resultOffset": offset,
-            "resultRecordCount": PAGE_SIZE,
-            **extra,
-        }
-        resp = requests.post(url, data=params, timeout=60)
-        resp.raise_for_status()
-        page = resp.json().get("features", [])
-        features += [f for f in page if f.get("geometry")]
-        if len(page) < PAGE_SIZE:
-            return features
-        offset += PAGE_SIZE
+    """Fetch all matching features (WGS84): ask for the object ids first, then download them in batches.
 
+    Offset paging is unreliable on this server (short pages, unstable order, duplicates)."""
+    url = f"{BASE}/{LAYERS[layer]}/query"
+    resp = requests.post(url, data={"where": "1=1", "returnIdsOnly": "true", "f": "json", **extra}, timeout=60)
+    resp.raise_for_status()
+    ids = sorted(resp.json().get("objectIds") or [])
+    features = []
+    for i in range(0, len(ids), PAGE_SIZE):
+        params = {"objectIds": ",".join(map(str, ids[i:i + PAGE_SIZE])), "outFields": "*", "outSR": 4326,
+                  "f": "geojson"}
+        page = requests.post(url, data=params, timeout=60)
+        page.raise_for_status()
+        features += [f for f in page.json().get("features", []) if f.get("geometry")]
+    return features
 
 def _cached(name: str, fetch) -> list[dict]:
     path = CACHE_DIR / f"{name}.geojson"
@@ -68,3 +62,31 @@ def load_layer_in_barrio(layer: str, barrio: dict) -> list[dict]:
     }
     code = barrio["properties"]["coddistbar"]
     return _cached(f"{layer}_{code}", lambda: _query(layer, extra))
+
+
+def normalize_barrio(name: str | None) -> str:
+    """'121 - AIORA' / 'Aiora' -> 'AIORA' so layers with different barrio formats can be joined."""
+    import unicodedata
+
+    if not isinstance(name, str) or not name:
+        return ""
+    name = name.split(" - ", 1)[-1].strip().upper()
+    return "".join(c for c in unicodedata.normalize("NFD", name) if unicodedata.category(c) != "Mn")
+
+
+def group_stats(layer: str, group_field: str, stats: list[tuple[str, str, str]]) -> list[dict]:
+    """Server-side GROUP BY on a layer: stats = [(type, field, out_name)], e.g. ("count", "objectid", "n")."""
+    def fetch():
+        out = [{"statisticType": t, "onStatisticField": f, "outStatisticFieldName": o} for t, f, o in stats]
+        resp = requests.post(f"{BASE}/{LAYERS[layer]}/query", data={
+            "where": "1=1", "groupByFieldsForStatistics": group_field,
+            "outStatistics": json.dumps(out), "f": "json"}, timeout=60)
+        resp.raise_for_status()
+        return [{"type": "Feature", "geometry": None, "properties": f["attributes"]} for f in resp.json()["features"]]
+    name = f"stats_{layer}_{group_field}_" + "_".join(o for _, _, o in stats)
+    return [f["properties"] for f in _cached(name, fetch)]
+
+
+def load_all_parks() -> list[dict]:
+    """All 807 municipal green spaces (polygons)."""
+    return _cached("parques_all", lambda: _query("parques", {}))
