@@ -274,7 +274,7 @@ if not state.get("user") and not state.get("guest"):
         st.markdown(f'<div class="landing-stats" aria-live="off">{sets_html}</div>', unsafe_allow_html=True)
         _, main_col, _ = st.columns([1, 1.3, 1])
         if main_col.button("Haz de tu barrio un lugar más verde", key="cta_main", use_container_width=True):
-            state.guest = True
+            state.show_login = True
             st.rerun()
         _, discover_col, _ = st.columns([1, 1.3, 1])
         if discover_col.button("Descubre tu barrio", key="cta_discover", use_container_width=True):
