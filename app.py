@@ -10,6 +10,26 @@ import model
 
 st.set_page_config(page_title="València Futura", page_icon="🏙️", layout="wide")
 NEIGHBOURS = ["Ana", "Luis", "Marta", "Pepe"]
+COLORS = {"bench": "#6D4C41", "tree": "#43A047", "park": "#2E7D4F", "covered": "#B9DDB0", "uncovered": "#D9534F"}
+
+st.markdown(
+    """
+    <style>
+    .block-container {padding-top: 2rem;}
+    .hero {background: linear-gradient(120deg, #1F3D2B 0%, #2E7D4F 60%, #6FAF6B 100%);
+           color: #F5F8F1; padding: 1.6rem 2rem; border-radius: 18px; margin-bottom: 1.2rem;}
+    .hero h1 {color: #F5F8F1 !important; margin: 0; font-size: 2.6rem;}
+    .hero p {margin: .3rem 0 0; opacity: .9; font-size: 1.05rem; max-width: 60rem;}
+    [data-testid="stMetric"] {background: #FFFFFF; border: 1px solid #CFDDC8; border-radius: 14px;
+                              padding: .8rem 1rem; box-shadow: 0 1px 3px rgba(31,61,43,.06);}
+    [data-testid="stMetricLabel"] {color: #4A6354;}
+    .legend span {display: inline-flex; align-items: center; gap: .35rem; margin-right: 1rem; font-size: .9rem;}
+    .legend i {width: 12px; height: 12px; border-radius: 50%; display: inline-block;}
+    .legend i.sq {border-radius: 3px;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 @st.cache_data(show_spinner="Descargando datos del geoportal municipal…")
@@ -33,7 +53,7 @@ def barrio_center(barrio: dict) -> tuple[float, float]:
 # --- Sidebar: neighbourhood, neighbour and decision variables -------------------------
 barrio_names = sorted(b["properties"]["nombre"] for b in data.load_barrios())
 with st.sidebar:
-    st.title("🏙️ València Futura")
+    st.title("🌿 València Futura")
     barrio_name = st.selectbox("Barrio", barrio_names, index=barrio_names.index("RUSSAFA"))
     voter = st.selectbox("Soy el vecino/a", NEIGHBOURS)
     st.subheader("Variables de decisión")
@@ -52,6 +72,13 @@ elderly = model.estimate_population(blocks, mean_residents, pct_elderly)
 state = st.session_state
 if state.get("barrio") != barrio_name:
     state.update(barrio=barrio_name, new_benches=[], new_trees=[], last_click=None)
+
+st.markdown(
+    f"""<div class="hero"><h1>València Futura</h1>
+    <p>Diseña la reforma de <b>{barrio_name.title()}</b> sobre datos reales del Ayuntamiento,
+    mide a cuántos vecinos mayores llega y somételo a votación.</p></div>""",
+    unsafe_allow_html=True,
+)
 
 tab_sim, tab_vote = st.tabs(["🛠️ Simulador", "🗳️ Votación"])
 
@@ -93,26 +120,35 @@ with tab_sim:
 
     with left:
         m = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap")
-        folium.GeoJson(d["barrio"], style_function=lambda _: {"color": "#333", "fill": False, "weight": 2}).add_to(m)
+        folium.GeoJson(d["barrio"], style_function=lambda _: {"color": "#1F3D2B", "fill": False, "weight": 3, "dashArray": "6 4"}).add_to(m)
         for p in d["parques"]:
-            folium.GeoJson(p, style_function=lambda _: {"color": "#2e7d32", "fillOpacity": 0.35, "weight": 1},
+            folium.GeoJson(p, style_function=lambda _: {"color": COLORS["park"], "fillColor": COLORS["park"], "fillOpacity": 0.4, "weight": 1},
                            tooltip=p["properties"].get("nombre")).add_to(m)
         covered = model.covered_mask(blocks, all_benches, radius, lat0)
         for f, ok, e in zip(d["manzanas"], covered, elderly):
             folium.GeoJson(f, style_function=lambda _, ok=ok: {
-                "color": "#999", "weight": 0.5, "fillColor": "#cfd8dc" if ok else "#e53935", "fillOpacity": 0.45},
+                "color": "#FFFFFF", "weight": 0.8, "fillColor": COLORS["covered"] if ok else COLORS["uncovered"],
+                "fillOpacity": 0.35 if ok else 0.5},
                 tooltip=f"{e:.0f} mayores (est.) · {'cubierta' if ok else 'SIN banco cerca'}").add_to(m)
         for lat, lon in d["arboles"]:
-            folium.CircleMarker([lat, lon], radius=2, color="#43a047", fill=True, weight=0).add_to(m)
+            folium.CircleMarker([lat, lon], radius=2.5, color=COLORS["tree"], fill=True, fill_opacity=0.8, weight=0).add_to(m)
         for lat, lon in d["bancos"]:
-            folium.CircleMarker([lat, lon], radius=3, color="#1e88e5", fill=True, fill_opacity=1, weight=0).add_to(m)
+            folium.CircleMarker([lat, lon], radius=3.5, color=COLORS["bench"], fill=True, fill_opacity=1, weight=0).add_to(m)
         for lat, lon in state.new_benches:
             folium.Marker([lat, lon], icon=folium.Icon(color="orange", icon="plus"), tooltip="Banco nuevo").add_to(m)
         for lat, lon in state.new_trees:
             folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol nuevo").add_to(m)
 
         out = st_folium(m, key="map", height=620, use_container_width=True, returned_objects=["last_clicked"])
-        st.caption("🔵 banco existente · 🟢 árbol existente · zona verde = parque · 🟥 manzana sin banco a ≤ R m · 🟧 propuesta")
+        st.markdown(
+            f"""<div class="legend">
+            <span><i style="background:{COLORS['bench']}"></i>Banco existente</span>
+            <span><i style="background:{COLORS['tree']}"></i>Árbol existente</span>
+            <span><i class="sq" style="background:{COLORS['park']}"></i>Parque / jardín</span>
+            <span><i class="sq" style="background:{COLORS['uncovered']}"></i>Manzana sin banco a ≤ {radius} m</span>
+            <span><i style="background:#F0932B"></i>Propuesta</span></div>""",
+            unsafe_allow_html=True,
+        )
         click = (out or {}).get("last_clicked")
         if click and click != state.last_click:
             state.last_click = click
