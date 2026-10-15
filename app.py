@@ -390,8 +390,12 @@ with st.sidebar:
     st.subheader("Población estimada")
     st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
     mean_residents = 150  # fixed estimate of residents in an average-size block
-    pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
-    pct_children = st.slider("Menores de 15 años (%)", 5, 30, 13)
+    pct_elderly, pct_children, from_index = data.age_estimates().get(
+        data.normalize_barrio(barrio_name), (data.CITY_PCT_ELDERLY, data.CITY_PCT_CHILDREN, False))
+    st.markdown(f"En **{barrio_name.title()}**, de cada 100 vecinos unos **{pct_elderly:.0f}** tienen más de 65 años "
+                f"y unos **{pct_children:.0f}** son niños (menos de 15).")
+    st.caption("Estimación a partir del índice de vulnerabilidad demográfica por barrio del Ayuntamiento (2021)."
+               if from_index else "Este barrio no tiene índice publicado: usamos la media de la ciudad.")
     # WHO criterion for the children headline: a green space of at least 0.5 ha within 300 m of home.
     green_radius, green_min_area = 300, 5000
 
@@ -481,9 +485,9 @@ with tab_sim:
         covered = model.covered_mask(blocks, all_benches, radius, lat0)
         # Sequential shading on a fixed scale (the slider maximum), so raising the % darkens the blocks.
         if color_by == "Personas mayores":
-            values, vmax = elderly, model.estimate_population(blocks, mean_residents, 40).max()
+            values, vmax = elderly, model.estimate_population(blocks, mean_residents, 32).max()
         elif color_by == "Niños":
-            values, vmax = children, model.estimate_population(blocks, mean_residents, 30).max()
+            values, vmax = children, model.estimate_population(blocks, mean_residents, 18).max()
         else:
             values, vmax = None, 1
         for f, ok, e, k in zip(d["manzanas"], covered, elderly, children):

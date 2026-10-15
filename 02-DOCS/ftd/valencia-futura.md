@@ -125,3 +125,7 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Titular y cifras de portada: visibles desde el primer fotograma, cambio en ~0,3 s, sin esperas (retrasos negativos).
 - Variables de población en lenguaje claro ("De cada 100 vecinos, ¿cuántos tienen más de 65 años?") con ayudas.
 - Evidencia (AppTest): visitante entra, "Inicia sesión para publicar" → login → borrador intacto → "Publicar propuesta"; voto de visitante → login, 0 votos guardados.
+
+## % de mayores y niños estimados por barrio (2026-10-15 ~17:20)
+- Sin edades publicadas por barrio: se escalan las medias de la ciudad (22 % / 13 %) con el índice de vulnerabilidad demográfica 2021 (más bajo = población más envejecida), limitado a 12–32 % y 8–18 %. 18 pedanías sin índice → media de la ciudad. Se quitan los sliders.
+- Evidencia: Russafa 27 %/10 % → 1.677 mayores sin banco; La Petxina 31 %/9 %; Benifaraig (sin índice) 22 %/13 %.
