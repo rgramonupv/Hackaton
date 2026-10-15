@@ -1,27 +1,31 @@
+# Huerta valenciana: huerta green, orange-tree orange, acequia blue, earth ochre, whitewash.
 [theme]
 base = "light"
-primaryColor = "#2E7D4F"
-backgroundColor = "#F5F8F1"
-secondaryBackgroundColor = "#E4EEDF"
-textColor = "#1C2E23"
-greenColor = "#2E7D4F"
-redColor = "#D9534F"
-linkColor = "#2E7D4F"
-borderColor = "#CFDDC8"
+primaryColor = "#2F5D3A"
+backgroundColor = "#F6F7F2"
+secondaryBackgroundColor = "#E8EDE1"
+textColor = "#1F2A23"
+greenColor = "#2F5D3A"
+orangeColor = "#E07B24"
+blueColor = "#2C6A86"
+linkColor = "#2C6A86"
+borderColor = "#D3DCCB"
 showWidgetBorder = true
-baseRadius = "12px"
-buttonRadius = "999px"
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap, sans-serif"
-headingFont = "Fraunces:https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap, serif"
-headingFontWeights = [700, 600, 600, 500, 500, 500]
+baseRadius = "6px"
+buttonRadius = "6px"
+baseFontSize = 17
+font = "'Public Sans':https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&display=swap, sans-serif"
+headingFont = "Spectral:https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&display=swap, serif"
+headingFontWeights = [600, 600, 600, 500, 500, 500]
+metricValueFontSize = "2.1rem"
 metricValueFontWeight = 600
 
 [theme.sidebar]
-backgroundColor = "#1F3D2B"
-secondaryBackgroundColor = "#2A4F38"
-textColor = "#EEF4EA"
-primaryColor = "#9CCB8A"
-borderColor = "#3B6248"
+backgroundColor = "#2F5D3A"
+secondaryBackgroundColor = "#3C6E47"
+textColor = "#F3F6EE"
+primaryColor = "#F2B66B"
+borderColor = "#4D7F57"
 
 [browser]
 gatherUsageStats = false

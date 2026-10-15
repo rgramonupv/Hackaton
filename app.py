@@ -1,5 +1,7 @@
 """València Futura — propose neighbourhood reforms with measured impact, then vote."""
 
+import html
+
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
@@ -8,24 +10,47 @@ import data
 import db
 import model
 
-st.set_page_config(page_title="València Futura", page_icon="🏙️", layout="wide")
+st.set_page_config(page_title="València Futura", page_icon="🌿", layout="wide")
 NEIGHBOURS = ["Ana", "Luis", "Marta", "Pepe"]
-COLORS = {"bench": "#6D4C41", "tree": "#43A047", "park": "#2E7D4F", "covered": "#B9DDB0", "uncovered": "#D9534F"}
+
+# Huerta valenciana palette: huerta green, orange-tree orange, acequia blue, earth ochre, whitewash.
+COLORS = {
+    "huerta": "#2F5D3A",
+    "naranja": "#E07B24",
+    "acequia": "#2C6A86",
+    "tierra": "#9A6B34",
+    "hoja": "#5E8C3A",
+    "cal": "#F6F7F2",
+    "tinta": "#1F2A23",
+    "covered": "#CFE0C3",
+}
 
 st.markdown(
-    """
+    f"""
     <style>
-    .block-container {padding-top: 2rem;}
-    .hero {background: linear-gradient(120deg, #1F3D2B 0%, #2E7D4F 60%, #6FAF6B 100%);
-           color: #F5F8F1; padding: 1.6rem 2rem; border-radius: 18px; margin-bottom: 1.2rem;}
-    .hero h1 {color: #F5F8F1 !important; margin: 0; font-size: 2.6rem;}
-    .hero p {margin: .3rem 0 0; opacity: .9; font-size: 1.05rem; max-width: 60rem;}
-    [data-testid="stMetric"] {background: #FFFFFF; border: 1px solid #CFDDC8; border-radius: 14px;
-                              padding: .8rem 1rem; box-shadow: 0 1px 3px rgba(31,61,43,.06);}
-    [data-testid="stMetricLabel"] {color: #4A6354;}
-    .legend span {display: inline-flex; align-items: center; gap: .35rem; margin-right: 1rem; font-size: .9rem;}
-    .legend i {width: 12px; height: 12px; border-radius: 50%; display: inline-block;}
-    .legend i.sq {border-radius: 3px;}
+    .block-container {{padding-top: 1.6rem; max-width: 1500px;}}
+    .headline {{font-family: Spectral, serif; font-size: 2.5rem; line-height: 1.2; font-weight: 500;
+                color: {COLORS['tinta']}; max-width: 34ch; margin: 0 0 .5rem;}}
+    .headline b {{font-weight: 700;}}
+    .azulejo {{height: 10px; margin: .2rem 0 .9rem; border-radius: 2px;
+               background: repeating-linear-gradient(45deg, {COLORS['acequia']} 0 5px, transparent 5px 10px),
+                           repeating-linear-gradient(-45deg, {COLORS['huerta']} 0 5px, {COLORS['cal']} 5px 10px);
+               opacity: .55; max-width: 220px;}}
+    .existing {{color: #4B5B50; font-size: 1.02rem; margin-bottom: .6rem;}}
+    [data-testid="stMetric"] {{border-left: 3px solid {COLORS['huerta']}; padding: .2rem 0 .2rem .8rem;}}
+    [data-testid="stMetricValue"] {{font-family: Spectral, serif;}}
+    .legend {{display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; font-size: .95rem; margin-top: .4rem;}}
+    .legend span {{display: inline-flex; align-items: center; gap: .4rem;}}
+    .legend i {{width: 12px; height: 12px; border-radius: 50%; display: inline-block;}}
+    .legend i.sq {{border-radius: 2px;}}
+    .rank-row {{display: grid; grid-template-columns: 2.2rem 1fr; gap: .2rem 1rem; align-items: baseline;}}
+    .rank-pos {{font-family: Spectral, serif; font-size: 1.8rem; color: {COLORS['huerta']};}}
+    .rank-title {{font-family: Spectral, serif; font-size: 1.35rem; font-weight: 600;}}
+    .rank-meta {{color: #4B5B50; font-size: .95rem;}}
+    .bar {{height: 10px; background: #E3EADC; border-radius: 5px; margin: .35rem 0;}}
+    .bar > div {{height: 100%; background: {COLORS['huerta']}; border-radius: 5px;}}
+    .best {{display: inline-block; background: {COLORS['naranja']}; color: white; font-size: .8rem;
+            padding: .05rem .55rem; border-radius: 999px; margin-left: .5rem; vertical-align: middle;}}
     </style>
     """,
     unsafe_allow_html=True,
@@ -50,19 +75,26 @@ def barrio_center(barrio: dict) -> tuple[float, float]:
     return sum(p[1] for p in ring) / len(ring), sum(p[0] for p in ring) / len(ring)
 
 
+def fmt(n: float) -> str:
+    """Spanish thousands separator."""
+    return f"{n:,.0f}".replace(",", ".")
+
+
 # --- Sidebar: neighbourhood, neighbour and decision variables -------------------------
 barrio_names = sorted(b["properties"]["nombre"] for b in data.load_barrios())
 with st.sidebar:
-    st.title("🌿 València Futura")
+    st.title("València Futura")
+    st.caption("El laboratorio de tu barrio")
     barrio_name = st.selectbox("Barrio", barrio_names, index=barrio_names.index("RUSSAFA"))
-    voter = st.selectbox("Soy el vecino/a", NEIGHBOURS)
+    voter = st.selectbox("Participas como", NEIGHBOURS)
     st.subheader("Variables de decisión")
-    radius = st.slider("Radio de cobertura de un banco (m)", 25, 300, 75, 25)
+    radius = st.slider("Distancia máxima a un banco (m)", 25, 300, 75, 25)
     cost_bench = st.number_input("Coste por banco (€)", 100, 5000, 800, 50)
     cost_tree = st.number_input("Coste por árbol (€)", 100, 5000, 400, 50)
-    st.caption("Población — **estimación** (el geoportal no publica edades por manzana)")
+    st.subheader("Población estimada")
+    st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
     mean_residents = st.slider("Habitantes medios por manzana", 20, 500, 150, 10)
-    pct_elderly = st.slider("% de mayores de 65 años", 5, 40, 22)
+    pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
 
 d = load_barrio(barrio_name)
 lat0, lon0 = barrio_center(d["barrio"])
@@ -72,106 +104,120 @@ elderly = model.estimate_population(blocks, mean_residents, pct_elderly)
 state = st.session_state
 if state.get("barrio") != barrio_name:
     state.update(barrio=barrio_name, new_benches=[], new_trees=[], last_click=None)
+if state.get("flash"):
+    st.toast(state.pop("flash"))
+
+all_benches = d["bancos"] + state.new_benches
+before = model.coverage(blocks, elderly, d["bancos"], radius, lat0)
+after = model.coverage(blocks, elderly, all_benches, radius, lat0)
+gained = after - before
+cost = len(state.new_benches) * cost_bench + len(state.new_trees) * cost_tree
+uncovered = elderly.sum() - after
 
 st.markdown(
-    f"""<div class="hero"><h1>València Futura</h1>
-    <p>Diseña la reforma de <b>{barrio_name.title()}</b> sobre datos reales del Ayuntamiento,
-    mide a cuántos vecinos mayores llega y somételo a votación.</p></div>""",
+    f"""<p class="headline">En {barrio_name.title()}, <b>{fmt(uncovered)} personas mayores</b>
+    no tienen un banco a menos de {radius} m.</p><div class="azulejo"></div>""",
     unsafe_allow_html=True,
 )
 
-tab_sim, tab_vote = st.tabs(["🛠️ Simulador", "🗳️ Votación"])
+tab_sim, tab_vote = st.tabs(["Diseña tu propuesta", "Vota las propuestas"])
 
 # --- Simulator ------------------------------------------------------------------------
 with tab_sim:
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Bancos existentes", len(d["bancos"]))
-    c2.metric("Árboles existentes", len(d["arboles"]))
-    c3.metric("Parques y jardines", len(d["parques"]))
-    c4.metric("Manzanas", len(blocks))
-
-    all_benches = d["bancos"] + state.new_benches
-    before = model.coverage(blocks, elderly, d["bancos"], radius, lat0)
-    after = model.coverage(blocks, elderly, all_benches, radius, lat0)
-    cost = len(state.new_benches) * cost_bench + len(state.new_trees) * cost_tree
-    gained = after - before
-
-    left, right = st.columns([3, 1])
+    st.markdown(
+        f"""<p class="existing">Ya hay en el barrio {fmt(len(d['bancos']))} bancos, {fmt(len(d['arboles']))} árboles
+        y {len(d['parques'])} parques y jardines, repartidos en {len(blocks)} manzanas.</p>""",
+        unsafe_allow_html=True,
+    )
+    left, right = st.columns([7, 3], gap="large")
     with right:
-        mode = st.radio("Al hacer clic en el mapa añado…", ["🪑 Banco", "🌳 Árbol"])
-        st.metric("Mayores a ≤ %d m de un banco" % radius, f"{after:,.0f}", f"{gained:+,.0f}")
-        st.caption(f"de {elderly.sum():,.0f} mayores estimados en el barrio")
-        st.metric("Coste de la propuesta", f"{cost:,.0f} €")
-        st.metric("€ por mayor beneficiado", f"{cost / gained:,.0f} €" if gained > 0 else "—")
-        st.write(f"Nuevos: {len(state.new_benches)} bancos · {len(state.new_trees)} árboles")
-        if st.button("↩️ Deshacer todo"):
+        st.subheader("Tu propuesta")
+        mode = st.radio("Al hacer clic en el mapa, añade", ["Un banco", "Un árbol"], horizontal=True)
+        st.metric(f"Mayores con banco a ≤ {radius} m", fmt(after), f"{gained:+,.0f}".replace(",", "."))
+        st.metric("Coste", f"{fmt(cost)} €")
+        st.metric("Coste por persona mayor beneficiada", f"{fmt(cost / gained)} €" if gained > 0 else "—")
+        st.caption(f"{len(state.new_benches)} bancos y {len(state.new_trees)} árboles nuevos")
+        if st.button("Quitar todo lo añadido", disabled=not (state.new_benches or state.new_trees)):
             state.update(new_benches=[], new_trees=[])
             st.rerun()
-        with st.form("save"):
-            title = st.text_input("Título de la propuesta")
-            if st.form_submit_button("📤 Publicar para votación", disabled=not (state.new_benches or state.new_trees)):
+        with st.form("save", border=False):
+            title = st.text_input("Nombre de la propuesta", placeholder="Bancos junto al mercado de Russafa")
+            if st.form_submit_button("Publicar propuesta", type="primary",
+                                     disabled=not (state.new_benches or state.new_trees)):
                 db.save_proposal(
-                    barrio_name, title or "Propuesta sin título", voter, state.new_benches, state.new_trees,
+                    barrio_name, title or "Propuesta sin nombre", voter, state.new_benches, state.new_trees,
                     cost, before, after,
                     {"radius": radius, "mean_residents": mean_residents, "pct_elderly": pct_elderly},
                 )
-                state.update(new_benches=[], new_trees=[])
-                st.success("Propuesta publicada. Ve a la pestaña Votación.")
+                state.update(new_benches=[], new_trees=[], flash="Propuesta publicada. Ya se puede votar.")
+                st.rerun()
 
     with left:
         m = folium.Map(location=[lat0, lon0], zoom_start=16, tiles="OpenStreetMap")
-        folium.GeoJson(d["barrio"], style_function=lambda _: {"color": "#1F3D2B", "fill": False, "weight": 3, "dashArray": "6 4"}).add_to(m)
+        folium.GeoJson(d["barrio"], style_function=lambda _: {
+            "color": COLORS["huerta"], "fill": False, "weight": 3, "dashArray": "6 4"}).add_to(m)
         for p in d["parques"]:
-            folium.GeoJson(p, style_function=lambda _: {"color": COLORS["park"], "fillColor": COLORS["park"], "fillOpacity": 0.4, "weight": 1},
-                           tooltip=p["properties"].get("nombre")).add_to(m)
+            folium.GeoJson(p, style_function=lambda _: {
+                "color": COLORS["huerta"], "fillColor": COLORS["hoja"], "fillOpacity": 0.45, "weight": 1},
+                tooltip=p["properties"].get("nombre")).add_to(m)
         covered = model.covered_mask(blocks, all_benches, radius, lat0)
         for f, ok, e in zip(d["manzanas"], covered, elderly):
             folium.GeoJson(f, style_function=lambda _, ok=ok: {
-                "color": "#FFFFFF", "weight": 0.8, "fillColor": COLORS["covered"] if ok else COLORS["uncovered"],
-                "fillOpacity": 0.35 if ok else 0.5},
-                tooltip=f"{e:.0f} mayores (est.) · {'cubierta' if ok else 'SIN banco cerca'}").add_to(m)
+                "color": "#FFFFFF", "weight": 0.8, "fillColor": COLORS["covered"] if ok else COLORS["naranja"],
+                "fillOpacity": 0.35 if ok else 0.55},
+                tooltip=f"{e:.0f} mayores (estimado), {'con banco cerca' if ok else 'sin banco cerca'}").add_to(m)
         for lat, lon in d["arboles"]:
-            folium.CircleMarker([lat, lon], radius=2.5, color=COLORS["tree"], fill=True, fill_opacity=0.8, weight=0).add_to(m)
+            folium.CircleMarker([lat, lon], radius=2.5, color=COLORS["hoja"], fill=True, fill_opacity=0.8,
+                                weight=0).add_to(m)
         for lat, lon in d["bancos"]:
-            folium.CircleMarker([lat, lon], radius=3.5, color=COLORS["bench"], fill=True, fill_opacity=1, weight=0).add_to(m)
+            folium.CircleMarker([lat, lon], radius=3.5, color=COLORS["tierra"], fill=True, fill_opacity=1,
+                                weight=0).add_to(m)
         for lat, lon in state.new_benches:
-            folium.Marker([lat, lon], icon=folium.Icon(color="orange", icon="plus"), tooltip="Banco nuevo").add_to(m)
+            folium.Marker([lat, lon], icon=folium.Icon(color="cadetblue", icon="plus"), tooltip="Banco nuevo").add_to(m)
         for lat, lon in state.new_trees:
             folium.Marker([lat, lon], icon=folium.Icon(color="green", icon="leaf"), tooltip="Árbol nuevo").add_to(m)
 
-        out = st_folium(m, key="map", height=620, use_container_width=True, returned_objects=["last_clicked"])
+        out = st_folium(m, key="map", height=600, use_container_width=True, returned_objects=["last_clicked"])
         st.markdown(
             f"""<div class="legend">
-            <span><i style="background:{COLORS['bench']}"></i>Banco existente</span>
-            <span><i style="background:{COLORS['tree']}"></i>Árbol existente</span>
-            <span><i class="sq" style="background:{COLORS['park']}"></i>Parque / jardín</span>
-            <span><i class="sq" style="background:{COLORS['uncovered']}"></i>Manzana sin banco a ≤ {radius} m</span>
-            <span><i style="background:#F0932B"></i>Propuesta</span></div>""",
+            <span><i style="background:{COLORS['tierra']}"></i>Banco</span>
+            <span><i style="background:{COLORS['hoja']}"></i>Árbol</span>
+            <span><i class="sq" style="background:{COLORS['hoja']}"></i>Parque o jardín</span>
+            <span><i class="sq" style="background:{COLORS['naranja']}"></i>Manzana sin banco a ≤ {radius} m</span>
+            <span><i style="background:{COLORS['acequia']}"></i>Lo que tú añades</span></div>""",
             unsafe_allow_html=True,
         )
         click = (out or {}).get("last_clicked")
         if click and click != state.last_click:
             state.last_click = click
-            point = (click["lat"], click["lng"])
-            (state.new_benches if mode.startswith("🪑") else state.new_trees).append(point)
+            (state.new_benches if mode == "Un banco" else state.new_trees).append((click["lat"], click["lng"]))
             st.rerun()
 
 # --- Voting ---------------------------------------------------------------------------
 with tab_vote:
-    st.subheader(f"Propuestas para {barrio_name}")
-    st.caption(f"Votando como **{voter}** · un voto por vecino y propuesta · cifras de población estimadas")
     proposals = db.ranking(barrio_name)
     if not proposals:
-        st.info("Aún no hay propuestas. Crea una en el Simulador.")
-    for i, p in enumerate(proposals, 1):
-        gain = p["elderly_after"] - p["elderly_before"]
-        with st.container(border=True):
-            a, b, c, e, f = st.columns([3, 1, 1, 1, 1])
-            a.markdown(f"**#{i} {p['title']}**  \npor {p['author']}")
-            b.metric("Votos", p["votes"])
-            c.metric("Coste", f"{p['cost']:,.0f} €")
-            e.metric("Mayores ganados", f"{gain:+,.0f}")
-            f.metric("€ / beneficiado", f"{p['cost'] / gain:,.0f}" if gain > 0 else "—")
-            if st.button(f"👍 Votar como {voter}", key=f"vote_{p['id']}"):
-                st.toast("Voto registrado" if db.vote(p["id"], voter) else f"{voter} ya había votado esta propuesta")
+        st.info("Todavía no hay propuestas en este barrio. Diseña la primera en la otra pestaña.")
+    else:
+        st.caption(f"Votas como {voter}. Cada persona puede votar una vez cada propuesta. "
+                   "Las cifras de población son estimadas.")
+        efficiency = {p["id"]: p["cost"] / g for p in proposals if (g := p["elderly_after"] - p["elderly_before"]) > 0}
+        best_id = min(efficiency, key=efficiency.get) if efficiency else None
+        max_votes = max(p["votes"] for p in proposals) or 1
+        for i, p in enumerate(proposals, 1):
+            gain = p["elderly_after"] - p["elderly_before"]
+            per_person = f"{fmt(efficiency[p['id']])} € por persona" if p["id"] in efficiency else "sin mayores nuevos cubiertos"
+            badge = '<span class="best">La más eficiente</span>' if p["id"] == best_id else ""
+            row, action = st.columns([5, 1], vertical_alignment="center")
+            row.markdown(
+                f"""<div class="rank-row"><div class="rank-pos">{i}</div><div>
+                <div class="rank-title">{html.escape(p['title'])}{badge}</div>
+                <div class="bar"><div style="width:{100 * p['votes'] / max_votes:.0f}%"></div></div>
+                <div class="rank-meta">{p['votes']} votos. Propuesta de {html.escape(p['author'])}: {fmt(p['cost'])} €,
+                {gain:+.0f} mayores con banco cerca, {per_person}.</div></div></div>""",
+                unsafe_allow_html=True,
+            )
+            if action.button("Votar", key=f"vote_{p['id']}"):
+                state.flash = "Voto registrado." if db.vote(p["id"], voter) else f"{voter} ya había votado esta propuesta."
                 st.rerun()
+            st.divider()

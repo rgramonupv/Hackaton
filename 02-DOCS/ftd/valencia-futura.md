@@ -64,3 +64,11 @@ Que un vecino diseñe una reforma de su barrio sobre un mapa con lo que ya exist
 
 ## Siguiente paso
 Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
+
+## Rediseño visual (2026-10-15 ~15:45, skill frontend-design + grill-me)
+- Público: jurado en proyector; trabajo principal: ver en 5 s dónde falta un banco y cómo lo arregla una propuesta.
+- Paleta "huerta valenciana": huerta #2F5D3A, naranja #E07B24 (manzanas sin banco), acequia #2C6A86 (lo añadido), tierra #9A6B34 (bancos), cal #F6F7F2 (fondo), tinta #1F2A23.
+- Tipografía: Spectral (titulares y cifras) + Public Sans (texto; diseñada para servicios públicos).
+- Elemento memorable: titular con la cifra en directo ("En Russafa, N personas mayores no tienen un banco a menos de R m"). Sin degradados ni tarjetas con sombra.
+- Votación: ranking con barra de votos y etiqueta "La más eficiente" (menor € por persona).
+- Evidencia: AppTest sin excepciones; títulos con HTML se escapan; votar suma 1; servidor /_stcore/health = 200.
