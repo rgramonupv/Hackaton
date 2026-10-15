@@ -52,3 +52,15 @@ def covered_mask(blocks: list[dict], benches: list[tuple[float, float]], radius_
 def coverage(blocks, elderly, benches, radius_m, lat0) -> float:
     """Estimated elderly residents covered by benches."""
     return float(elderly[covered_mask(blocks, benches, radius_m, lat0)].sum())
+
+
+def green_space_points(parks: list[dict], min_area_m2: float) -> list[tuple[float, float]]:
+    """Vertices (lat, lon) of parks at least min_area_m2 big; distance to them approximates distance to the park."""
+    points = []
+    for f in parks:
+        if (f["properties"].get("sup_total") or 0) < min_area_m2:
+            continue
+        g = f["geometry"]
+        for poly in [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]:
+            points += [(lat, lon) for lon, lat in poly[0]]
+    return points

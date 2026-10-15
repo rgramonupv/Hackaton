@@ -84,3 +84,8 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 - Hero a sangre con foto del Jardí del Túria (CC BY 4.0, crédito en `static/CREDITS.md` y en pantalla) y la cifra en directo; login a pantalla partida.
 - Revisión web-design-guidelines: corregido `role="img"` que ocultaba el h1; añadidos autocomplete, focus-visible, tabular-nums, text-wrap balance, placeholders con "…". Sin corregir: "Quitar lo añadido" sin deshacer; Title Case no aplica en castellano.
 - Evidencia: AppTest login → app → voto = 1 sin excepciones; `/app/static/hero.jpg` = 200.
+
+## Titular alterno: niños sin zona verde (2026-10-15 ~16:12)
+- Nuevo indicador: menores de 15 (estimado, % ajustable) cuya manzana no tiene una zona verde ≥ 0,5 ha a ≤ 300 m (criterio OMS Europa 2016; ambos umbrales ajustables). Distancia aproximada a los vértices del parque; solo parques que tocan el barrio.
+- El titular alterna cada 8 s entre mayores sin banco y niños sin zona verde (CSS; con reduced-motion se muestran las dos fijas).
+- Evidencia: Russafa (R=300 m, ≥5.000 m²) → 156 niños; a 500 m → 0. AppTest sin excepciones.

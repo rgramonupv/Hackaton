@@ -59,6 +59,15 @@ st.markdown(
         .slides i {{animation: none;}} .slides i:first-child {{opacity: 1;}}
     }}
     .hero-inner, .login-hero .display {{position: relative; z-index: 1;}}
+    .claims {{display: grid;}}
+    .claims span {{grid-area: 1 / 1; animation: claim 16s ease-in-out infinite;}}
+    .claims span:nth-child(2) {{animation-delay: -8s;}}
+    @keyframes claim {{0%, 44% {{opacity: 1; transform: none;}} 50%, 94% {{opacity: 0; transform: translateY(.4rem);}}
+                      100% {{opacity: 1; transform: none;}}}}
+    @media (prefers-reduced-motion: reduce) {{
+        .claims {{display: block;}} .claims span {{display: block; animation: none;}}
+        .claims span:nth-child(2) {{font-size: .55em; margin-top: .6rem;}}
+    }}
     .hero-inner {{padding: 6rem 3rem 2.6rem; max-width: 62rem; color: {COLORS['ozone']};}}
     .hero .display {{font-size: clamp(2.6rem, 5.2vw, 5rem); color: {COLORS['ozone']};}}
     .hero p {{font-size: 1.15rem; max-width: 46ch; margin: 1rem 0 0; opacity: .92;}}
@@ -193,11 +202,19 @@ with st.sidebar:
     st.caption("El geoportal publica las manzanas sin datos de edad, así que estas cifras son una estimación ajustable.")
     mean_residents = st.slider("Habitantes medios por manzana", 20, 500, 150, 10)
     pct_elderly = st.slider("Mayores de 65 años (%)", 5, 40, 22)
+    pct_children = st.slider("Menores de 15 años (%)", 5, 30, 13)
+    st.subheader("Zonas verdes")
+    st.caption("Criterio de la OMS: una zona verde de al menos 0,5 ha a 300 m de casa.")
+    green_radius = st.slider("Distancia máxima a una zona verde (m)", 100, 1000, 300, 50)
+    green_min_area = st.slider("Tamaño mínimo de zona verde (m²)", 0, 20000, 5000, 500)
 
 d = load_barrio(barrio_name)
 lat0, lon0 = barrio_center(d["barrio"])
 blocks = model.blocks_from_features(d["manzanas"], lat0)
 elderly = model.estimate_population(blocks, mean_residents, pct_elderly)
+children = model.estimate_population(blocks, mean_residents, pct_children)
+green_points = model.green_space_points(d["parques"], green_min_area)
+children_without_green = children.sum() - model.coverage(blocks, children, green_points, green_radius, lat0)
 
 if state.get("barrio") != barrio_name:
     state.update(barrio=barrio_name, new_benches=[], new_trees=[], last_click=None)
@@ -214,7 +231,10 @@ uncovered = elderly.sum() - after
 st.markdown(
     f"""<section class="hero">{carousel()}
     <div class="hero-inner">
-    <h1 class="display">{fmt(uncovered)} personas mayores de {barrio_name.title()} no tienen un banco a menos de {radius}&nbsp;m</h1>
+    <h1 class="display claims">
+    <span>{fmt(uncovered)} personas mayores de {barrio_name.title()} no tienen un banco a menos de {radius}&nbsp;m</span>
+    <span>{fmt(children_without_green)} niños de {barrio_name.title()} no tienen una zona verde a menos de {green_radius}&nbsp;m de casa</span>
+    </h1>
     <p>Coloca bancos y árboles en el mapa, mide a cuántos vecinos llegas y publícalo para que el barrio vote.</p>
     </div><span class="credit">{PHOTO_CREDIT}</span></section>
     <div class="stats" aria-label="Lo que ya hay en el barrio">
@@ -222,7 +242,8 @@ st.markdown(
     <div><b>{fmt(len(d['arboles']))}</b><span>árboles</span></div>
     <div><b>{len(d['parques'])}</b><span>parques y jardines</span></div>
     <div><b>{len(blocks)}</b><span>manzanas</span></div>
-    <div><b>{fmt(elderly.sum())}</b><span>mayores estimados</span></div></div>""",
+    <div><b>{fmt(elderly.sum())}</b><span>mayores estimados</span></div>
+    <div><b>{fmt(children.sum())}</b><span>niños estimados</span></div></div>""",
     unsafe_allow_html=True,
 )
 
