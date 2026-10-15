@@ -33,3 +33,20 @@ def _sprig(n_leaves: int, length: float, seed: int) -> str:
 
 SPRIG_A = _sprig(9, 70, 0)
 SPRIG_B = _sprig(7, 60, 2)
+
+
+def _logo_mark() -> str:
+    """White disc with a green leaf whose midrib branches like streets: the València Futura mark."""
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">'
+        '<circle cx="60" cy="60" r="56" fill="#FFFFFF"/>'
+        '<circle cx="60" cy="60" r="56" fill="none" stroke="#79C000" stroke-width="4"/>'
+        '<path d="M60 22 C88 34 92 70 60 98 C28 70 32 34 60 22Z" fill="#257422"/>'
+        '<path d="M60 30 L60 92 M60 50 L74 42 M60 50 L46 42 M60 66 L78 56 M60 66 L42 56 M60 80 L72 73 M60 80 L48 73" '
+        'stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" fill="none"/>'
+        "</svg>"
+    )
+    return "data:image/svg+xml," + quote(svg)
+
+
+LOGO_MARK = _logo_mark()

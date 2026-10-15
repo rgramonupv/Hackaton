@@ -181,6 +181,13 @@ if not state.get("user") and not state.get("guest"):
         .login-bg .slides::after {{background: radial-gradient(ellipse at center, rgba(19,58,36,.35) 0%,
                                    rgba(19,58,36,.8) 75%);}}
         [data-testid="stMainBlockContainer"] {{position: relative; z-index: 1; padding-top: 6vh;}}
+        .logo {{display: flex; align-items: center; justify-content: center; gap: 1.4rem; margin: 0 auto 1.2rem;
+                 filter: drop-shadow(0 6px 22px rgba(0,0,0,.35));}}
+        .logo img {{width: clamp(84px, 9vw, 132px); height: auto;}}
+        .logo-word {{display: flex; flex-direction: column; font-family: 'Barlow Condensed', sans-serif;
+                     font-weight: 800; text-transform: uppercase; line-height: .88; letter-spacing: .02em;}}
+        .logo-word span:first-child {{color: #FFFFFF; font-size: clamp(3.4rem, 7.5vw, 6.6rem);}}
+        .logo-word span:last-child {{color: #79C000; font-size: clamp(3.4rem, 7.5vw, 6.6rem);}}
         .login-title {{text-align: center; color: #FFFFFF; font-size: clamp(2.6rem, 5vw, 4.4rem);
                        text-shadow: 0 2px 18px rgba(0,0,0,.35); margin: 0 auto .4rem; max-width: 18ch;}}
         .login-sub {{text-align: center; color: #F1F6EE; font-size: 1.1rem; margin: 0 auto 2.2rem; max-width: 44ch;}}
@@ -210,7 +217,10 @@ if not state.get("user") and not state.get("guest"):
     # No indentation inside this HTML: after a <style> block, indented lines would render as a code block.
     st.markdown(
         f'<div class="login-bg">{carousel()}</div>'
-        '<h1 class="display login-title">Tu barrio se decide con datos</h1>'
+        + ('' if state.get("show_login") else
+           f'<div class="logo" role="img" aria-label="València Futura"><img src="{ornaments.LOGO_MARK}" alt="" '
+           'width="132" height="132"><div class="logo-word"><span>València</span><span>Futura</span></div></div>')
+        + '<h1 class="display login-title">Tu barrio se decide con datos</h1>'
         '<p class="login-sub">Propón mejoras para tu calle con datos reales del Ayuntamiento y vota las de tus '
         f'vecinos.</p><span class="login-credit">{PHOTO_CREDIT}</span>',
         unsafe_allow_html=True,
