@@ -476,7 +476,7 @@ with tab_sim:
         if not own_barrio:
             st.info(f"Puedes proponer cambios en {barrio_name.title()}, pero solo votan sus vecinos empadronados.")
         with st.form("save", border=False):
-            title = st.text_input("Nombre de la propuesta", placeholder="Bancos junto al mercado de Russafa…",
+            title = st.text_input("Nombre de la propuesta", placeholder=f"Más bancos y sombra en {barrio_name.title()}…",
                                   autocomplete="off")
             if st.form_submit_button("Inicia sesión para publicar" if guest else "Publicar propuesta",
                                      type="primary", use_container_width=True,
