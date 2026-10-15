@@ -57,6 +57,15 @@ def species_table(top: int = 10) -> pd.DataFrame:
     return df.sort_values("n", ascending=False).head(top)
 
 
+def species_chart(sp: pd.DataFrame) -> alt.Chart:
+    """Horizontal bars of the most planted species, with hover tooltips."""
+    return alt.Chart(sp).mark_bar(cornerRadiusEnd=4, height=14, color=GREEN).encode(
+        y=alt.Y("especie:N", sort="-x", title=None),
+        x=alt.X("n:Q", title="Árboles", axis=alt.Axis(grid=True, gridOpacity=0.3)),
+        tooltip=[alt.Tooltip("especie:N", title="Especie"), alt.Tooltip("n:Q", title="Árboles", format=",.0f")],
+    ).properties(height=alt.Step(22))
+
+
 def fmt(n: float) -> str:
     return f"{n:,.0f}".replace(",", ".")
 
@@ -128,15 +137,7 @@ def render(barrio: str) -> None:
         st.altair_chart(ranked_bar(df, field, unit, barrio), use_container_width=True)
 
     st.markdown("#### Especies más plantadas en la ciudad")
-    sp = species_table()
-    st.altair_chart(
-        alt.Chart(sp).mark_bar(cornerRadiusEnd=4, height=14, color=GREEN).encode(
-            y=alt.Y("especie:N", sort="-x", title=None),
-            x=alt.X("n:Q", title="Árboles", axis=alt.Axis(grid=True, gridOpacity=0.3)),
-            tooltip=[alt.Tooltip("especie:N", title="Especie"), alt.Tooltip("n:Q", title="Árboles", format=",.0f")],
-        ).properties(height=alt.Step(22)),
-        use_container_width=True,
-    )
+    st.altair_chart(species_chart(species_table()), use_container_width=True)
     with st.expander("Ver la tabla de todos los barrios"):
         st.dataframe(
             df.sort_values(field, ascending=False).rename(columns={

@@ -189,35 +189,77 @@ if not state.get("user"):
         unsafe_allow_html=True,
     )
     if not state.get("show_login"):
-        # Public landing: real city-wide green figures and calls to action that open the login.
+        # Public landing: rotating real city-wide green figures, calls to action that open the login,
+        # and content sections below the fold.
         city = green.city_table()
+        species = green.species_table()
+        top_trees = city.sort_values("arboles", ascending=False).iloc[0]
+        top_green = city.sort_values("m2_verde_por_ha", ascending=False).iloc[0]
+        stat_sets = [
+            [(fmt(city["arboles"].sum()), "árboles en la ciudad"),
+             (fmt(city["zona_verde_m2"].sum() / 10_000), "hectáreas de parques y jardines"),
+             (fmt(city["bancos"].sum()), "bancos en la calle")],
+            [(fmt(len(data.load_all_parks())), "zonas verdes"),
+             (fmt(len(data.group_stats("arboles", "nom_comu_c", [("count", "objectid", "n")]))), "especies de árbol"),
+             (fmt(species.iloc[0]["n"]), f"ejemplares de {species.iloc[0]['especie'].lower()}, el más plantado")],
+            [(fmt(top_trees["arboles"]), f"árboles en {top_trees['barrio'].title()}, el barrio con más"),
+             (fmt(top_green["m2_verde_por_ha"]), f"m² verdes por hectárea en {top_green['barrio'].title()}"),
+             (fmt(city["m2_verde_por_ha"].median()), "m² verdes por hectárea en el barrio mediano")],
+        ]
+        seconds = 5
+        sets_html = "".join(
+            f'<div class="stat-set" style="animation-delay:{i * seconds}s;animation-duration:{seconds * len(stat_sets)}s">'
+            + "".join(f"<div><b>{v}</b>{label}</div>" for v, label in group) + "</div>"
+            for i, group in enumerate(stat_sets)
+        )
         st.markdown(
             f"""<style>
-            .landing-stats {{display: flex; justify-content: center; flex-wrap: wrap; gap: 3rem; margin: 0 0 2.4rem;
-                             color: #FFFFFF; text-align: center; text-shadow: 0 2px 12px rgba(0,0,0,.35);}}
-            .landing-stats b {{display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 3.2rem;
-                               font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;}}
+            [data-testid="stMainBlockContainer"] {{padding-top: 2.5vh;}}
+            .login-sub {{margin-bottom: 1.2rem;}}
+            .landing-stats {{display: grid; margin: 0 auto 2rem; color: #FFFFFF; text-align: center;
+                             text-shadow: 0 2px 12px rgba(0,0,0,.35); min-height: 7.5rem;}}
+            .stat-set {{grid-area: 1 / 1; display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem 3.5rem;
+                        opacity: 0; animation: statfade linear infinite;}}
+            .stat-set div {{max-width: 16rem;}}
+            .stat-set b {{display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 3.4rem;
+                          font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;}}
+            @keyframes statfade {{0% {{opacity: 0;}} 5% {{opacity: 1;}} 30% {{opacity: 1;}} 35% {{opacity: 0;}}
+                                  100% {{opacity: 0;}}}}
+            @media (prefers-reduced-motion: reduce) {{
+                .stat-set {{animation: none;}} .stat-set:first-child {{opacity: 1;}}
+            }}
             [class*="st-key-cta_"] button {{border-radius: 999px; min-height: 3.4rem; font-size: 1.05rem;
                                            transition: transform .15s ease, background-color .15s ease;}}
             [class*="st-key-cta_"] button:hover {{transform: translateY(-2px);}}
-            .st-key-cta_main button {{background: #79C000; border-color: #79C000; color: #133A24;
-                                      box-shadow: 0 10px 30px rgba(121,192,0,.35);}}
-            .st-key-cta_main button:hover {{background: #8CD11A; border-color: #8CD11A; color: #133A24;}}
+            .st-key-cta_main button, .st-key-cta_end button {{background: #79C000; border-color: #79C000;
+                                      color: #133A24; box-shadow: 0 10px 30px rgba(121,192,0,.35);}}
+            .st-key-cta_main button:hover, .st-key-cta_end button:hover {{background: #8CD11A; color: #133A24;}}
             .st-key-cta_bench button, .st-key-cta_vote button {{background: rgba(255,255,255,.12);
                                       border: 2px solid #FFFFFF; color: #FFFFFF; backdrop-filter: blur(4px);}}
             .st-key-cta_bench button:hover, .st-key-cta_vote button:hover {{background: #FFFFFF; color: #133A24;}}
             @media (prefers-reduced-motion: reduce) {{[class*="st-key-cta_"] button {{transition: none;}}
                                                       [class*="st-key-cta_"] button:hover {{transform: none;}}}}
+            .st-key-landing_more {{position: relative; z-index: 1; background: #F1F6EE; margin: 12vh -3rem -3rem;
+                                   padding: 4rem 3rem 2rem; border-top: 6px solid #79C000;}}
+            .steps {{display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 2rem;
+                     margin: 1rem 0 3.5rem;}}
+            .steps div {{border-top: 3px solid #4BAA47; padding-top: 1rem; color: #133A24;}}
+            .steps b {{display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 3rem; font-weight: 800;
+                       color: #257422; line-height: 1;}}
+            .steps h3 {{font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; font-size: 1.6rem;
+                        margin: .4rem 0;}}
+            .statement {{background: #133A24; color: #F1F6EE; margin: 3rem -3rem 0; padding: 4rem 3rem;
+                         text-align: center;}}
+            .statement p.display {{font-size: clamp(2rem, 4vw, 3.4rem); max-width: 24ch; margin: 0 auto;
+                                   color: #FFFFFF;}}
+            .statement span {{display: block; margin-top: 1rem; color: #C8E379;}}
+            .landing-footer {{margin: 0 -3rem -2rem; padding: 2rem 3rem; background: #0E2C1B; color: #BED0C6;
+                              font-size: .85rem;}}
+            .landing-footer a {{color: #C8E379;}}
             </style>""",
             unsafe_allow_html=True,
         )
-        st.markdown(
-            '<div class="landing-stats">'
-            f'<div><b>{fmt(city["arboles"].sum())}</b>árboles en la ciudad</div>'
-            f'<div><b>{fmt(city["zona_verde_m2"].sum() / 10_000)}</b>hectáreas de parques y jardines</div>'
-            f'<div><b>{fmt(city["bancos"].sum())}</b>bancos en la calle</div></div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(f'<div class="landing-stats" aria-live="off">{sets_html}</div>', unsafe_allow_html=True)
         _, main_col, _ = st.columns([1, 1.3, 1])
         if main_col.button("Haz de tu barrio un lugar más verde", key="cta_main", use_container_width=True):
             state.show_login = True
@@ -229,6 +271,41 @@ if not state.get("user"):
         if c2.button("Vota las propuestas de tu barrio", key="cta_vote", use_container_width=True):
             state.show_login = True
             st.rerun()
+
+        with st.container(key="landing_more"):
+            st.markdown(
+                '<h2 class="display section-title">Cómo funciona</h2><div class="steps">'
+                '<div><b>1</b><h3>Entra con tu DNI</h3>Comprobamos que vives en el barrio, así cada voto es de '
+                'un vecino real.</div>'
+                '<div><b>2</b><h3>Diseña en el mapa</h3>Coloca bancos y árboles sobre los datos reales del '
+                'Ayuntamiento y mira al momento a cuántos vecinos llegas y cuánto cuesta.</div>'
+                '<div><b>3</b><h3>Vota y decide</h3>Las propuestas se ordenan por votos y muestran su coste por '
+                'persona beneficiada: votas sabiendo qué funciona.</div></div>',
+                unsafe_allow_html=True,
+            )
+            chart_col, text_col = st.columns([3, 2], gap="large", vertical_alignment="center")
+            with chart_col:
+                st.markdown('<h2 class="display section-title">Los árboles de València</h2>', unsafe_allow_html=True)
+                st.altair_chart(green.species_chart(species), use_container_width=True)
+            with text_col:
+                st.markdown(
+                    f"València tiene **{fmt(city['arboles'].sum())} árboles** en la calle, pero no están repartidos "
+                    f"por igual: {top_trees['barrio'].title()} tiene {fmt(top_trees['arboles'])} y el barrio "
+                    f"mediano, {fmt(city['arboles'].median())}.\n\n"
+                    "Con València Futura cada vecino puede ver qué tiene cerca y proponer lo que falta."
+                )
+                if st.button("Descubre tu barrio", key="cta_end", use_container_width=True):
+                    state.show_login = True
+                    st.rerun()
+            st.markdown(
+                '<div class="statement"><p class="display">Una administración que detecta lo que falta antes de '
+                'que lleguen las quejas</p><span>Con datos abiertos del Ayuntamiento de València y el criterio de zonas '
+                'verdes de la OMS</span></div>'
+                f'<div class="landing-footer">València Futura, proyecto de hackathon (2026). Datos: '
+                '<a href="https://geoportal.valencia.es">geoportal.valencia.es</a> (arbolado, bancos, espacios '
+                f'verdes, manzanas y barrios). {PHOTO_CREDIT}.</div>',
+                unsafe_allow_html=True,
+            )
         st.stop()
 
     _, center, _ = st.columns([1, 1.15, 1])

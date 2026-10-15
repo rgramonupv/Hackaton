@@ -103,3 +103,8 @@ Probar la demo en el navegador (clic → banco) y repartir tareas entre los 4.
 ## Portada pública con llamadas a la acción (2026-10-15 ~16:27)
 - Antes del login: carrusel, titular, cifras reales de la ciudad y 3 botones ("Haz de tu barrio un lugar más verde", "Acerca un banco a tus mayores", "Vota las propuestas de tu barrio") que abren el login; "Volver al inicio" en la tarjeta.
 - Evidencia: AppTest portada → login → volver → login → app sin excepciones.
+
+## Portada: cifras rotativas y secciones (2026-10-15 ~16:30)
+- 3 grupos de 3 cifras reales que rotan cada 5 s (ciudad, especies, barrios extremos), más arriba bajo el titular.
+- Secciones bajo el pliegue: "Cómo funciona" (3 pasos), gráfico interactivo de especies + texto + botón, frase de cierre y pie con fuentes y créditos.
+- Evidencia: AppTest portada (4 botones, 9 cifras) → login → app sin excepciones.
